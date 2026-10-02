@@ -251,6 +251,7 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
       <span>Click your block on the map to select it. Covers the Wimmera catchment only (dashed outline).</span>
       <label><input type="checkbox" id="combine"> Add neighbouring titles</label>
       <button class="btn" type="button" id="clearsel">Clear selection</button>
+      <button class="btn" type="button" id="showexample" hidden>Show example block</button>
     </div>
   </section>
 
@@ -458,7 +459,9 @@ function loadUser(){ S.user = Object.assign({fires:[], sev:{}, div:{}}, store(us
 function saveUser(){ store(userKey(), S.user); }
 
 map.on("click", e => selectAt(e.latlng, $("#combine").checked));
-$("#clearsel").addEventListener("click", () => { clearBioZoom(false); S = null; PICK = null; for(const k in OV) delete OV[k]; ovLayer.clearLayers(); ctxLayer.clearLayers(); stageLayer.clearLayers(); selLayer.clearLayers(); selInner.clearLayers(); hiLayer.clearLayers(); store("bfp:last", null); renderEmpty(); });
+$("#clearsel").addEventListener("click", () => { clearBioZoom(false); S = null; PICK = null; for(const k in OV) delete OV[k]; ovLayer.clearLayers(); ctxLayer.clearLayers(); stageLayer.clearLayers(); selLayer.clearLayers(); selInner.clearLayers(); hiLayer.clearLayers(); store("bfp:last", null); renderEmpty(); syncExampleBtn(); });
+$("#showexample").addEventListener("click", () => { store("bfp:last", null); $("#q").value = ""; loadExample(); });
+function syncExampleBtn(){ $("#showexample").hidden = !!(S && S.example); }
 
 async function selectAt(latlng, add, label){
   if(!inWimmera(latlng.lng, latlng.lat)){ setBanner("error", OUTSIDE_MSG); return; }
@@ -510,6 +513,7 @@ async function analyse(id){
   ctxLayer.clearLayers(); stageLayer.clearLayers();
   hiLayer.clearLayers(); PICK = null; for(const k in OV) delete OV[k]; ovLayer.clearLayers(); clearBioZoom(false); map.setMinZoom(7); map.setMaxBounds(L.latLngBounds(WIM_BOUNDS).pad(0.25));
   map.fitBounds(selLayer.getBounds(), {maxZoom:16, padding:[30,30]});
+  syncExampleBtn();
   setBanner(S.example ? "example" : "loading", S.example ? null : "Pulling bioregion, geology, vegetation and fire records for this block…");
   renderHead();
   for(const s of ["#s11","#s12","#s13","#s14","#s15","#ssp","#swd"]) $(s+" .body").innerHTML = '<div class="skel"></div><div class="skel"></div>';
@@ -1416,14 +1420,19 @@ async function runSearch(){
       return analyse(id);
     }catch(e){ /* fall through to example */ }
   }
+  loadExample();
+})();
+
+async function loadExample(){
   const id = ++runId;
+  setBanner("loading", "Loading the example block…");
   try{
     const fs = await wfs("property_view","pfi,geom", atPoint(EXAMPLE.lng, EXAMPLE.lat), 3);
     if(id !== runId || !fs.length) return;
     S = {parcels:[fs[0]], label:EXAMPLE.label, example:true};
     await analyse(id);
   }catch(e){ console.error(e); renderEmpty(); setBanner("error", IN_PREVIEW ? PREVIEW_MSG : "Couldn’t reach the Victorian open data service (opendata.maps.vic.gov.au). Check your internet connection and reload."); }
-})();
+}
 </script>
 <script>
 (function(){
