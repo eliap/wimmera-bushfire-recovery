@@ -10,7 +10,7 @@
 <style>
 /* Colours and fonts match the guide (style.css): Project Platypus teal/slate palette; Amatic SC titles, Lato subtitles, Open Sans text. */
 :root{
-  color-scheme:light;
+  color-scheme:only light; /* "only" stops Chrome's auto-dark from repainting the light theme; the real dark theme is below */
   --paper:#FFFFFF; --surface:#F8FAFC; --surface-2:#F1F5F9;
   --ink:#1D293B; --ink-2:#314563; --muted:#5B6B82; --line:#E2E8F0; --rule:#CBD5E1;
   --accent:#0F766E; --accent-deep:#134E4A; --accent-night:#042F2E; --accent-soft:#CCFBF1;
@@ -229,7 +229,7 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
   .themebtn{display:none!important}
 }
 </style>
-<script>try{ if(localStorage.getItem("bfp:theme")==="dark") document.documentElement.setAttribute("data-theme","dark"); }catch(e){}</script>
+<script>try{var t=localStorage.getItem("bfp:theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 </head>
 <body data-part="1">
 <header class="topbar">
@@ -302,11 +302,12 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
 
     <div class="sources">
       <b style="color:var(--ink)">Where this comes from</b>
-      <p>Every figure is fetched live from the Victorian Government’s open spatial data service (<code>opendata.maps.vic.gov.au</code>), which carries DEECA’s datasets. Tolerable fire intervals and growth stages are the tables in Part 1 of the guide (after Cheal 2010).</p>
+      <p>Every figure is fetched live from the Victorian Government’s open spatial data service (<code>opendata.maps.vic.gov.au</code>), which carries DEECA’s datasets. Tolerable fire intervals and growth stages come from Cheal (2010), the source of DEECA’s tolerable fire interval and growth stage tables; for the vegetation types in the guide’s Part 1 tables they are the same figures. Each EVC is matched to one of DEECA’s Ecological Fire Groups by its EVC number. Those matches are being checked by an ecologist.</p>
       <ul>
         <li>Bioregions: Victorian Bioregions (VBIOREG100)</li>
         <li>Geology: Seamless Geology 1:250,000 (GEOL250)</li>
         <li>Vegetation: 2005 and pre-1750 Ecological Vegetation Classes with Bioregional Conservation Status (NV2005_EVCBCS, NV1750_EVCBCS)</li>
+        <li>Fire groups and intervals: Cheal, D. (2010) <em>Growth stages and tolerable fire intervals for Victoria’s native vegetation data sets</em>. Fire and Adaptive Management Report 84, DSE (Table 2.5 and Section 4)</li>
         <li>Fire: <a href="https://discover.data.vic.gov.au/dataset/fire-history-records-of-fires-across-victoria" target="_blank" rel="noopener">Fire History Records of Fires across Victoria</a> and Fire History showing the number of times areas have been burnt</li>
         <li>Plants: Victorian Biodiversity Atlas flora quadrat records (VBA_FLORA25), pre-summarised by bioregion and vegetation type; fire traits from <a href="https://doi.org/10.5281/zenodo.15718081" target="_blank" rel="noopener">AusTraits 7.0.0</a>, mainly DEECA’s Vital Attributes database (White 2020) and Cheal (2017); photos loaded live from <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a>, credited on each image.</li>
         <li>Property boundaries: Vicmap Property. Catchment Management Authority and Landcare group boundaries (Landcare groups as mapped in 2015).</li>
@@ -330,13 +331,93 @@ const BIOREGIONS = {
   "Central Victorian Uplands": {landform:"Dissected uplands on Lower Palaeozoic deposits, among granitic and sedimentary country.", veg:"Alluvial Terraces Herb-rich Woodland, Grassy Woodland, Grassy Dry Forest."},
   "Lowan Mallee": {landform:"An undulating plain of deep, pale siliceous sands (the Lowan Sands): old consolidated dunes of Pleistocene origin, with low ridges of red, lateritised sandstone.", veg:"Heathy Woodland, Lowan Sands Mallee, Heathy Mallee, Dunefield Heathland, Tea-tree Scrub."}
 };
-// Tolerable fire intervals (years), guide section 1.4, after Cheal (2010). Growth stage upper bounds from section 1.5.
+// Fire groups (DEECA Ecological Fire Groups / Ecological Vegetation Divisions). Intervals and growth stages from Cheal (2010)
+// Table 2.5 and Section 4, which DEECA's EFG_EVD_TFI and EFG_EVD_GROWTH_STAGES tables reproduce. max:null = Cheal sets no maximum.
+// stages = upper bounds of Juvenile / Young / Mature (Juvenile = renewal + juvenility, Young = adolescence, Mature = maturity or
+// vigorous maturity, Old = everything after); a null third bound means there is no Old stage. stages:null = not staged.
+// guide = the row in the guide's own 1.4 table this group corresponds to.
 const DIVS = {
-  ghdf:{name:"Grassy / Heathy Dry Forest", evcs:["Heathy Woodland","Shrubby Woodland","Grassy Dry Forest","Heathy Dry Forest"], minHigh:15, minPatchy:10, max:45, stages:[3,10,35]},
-  forby:{name:"Forby Forest", evcs:["Damp Sands Herb-rich Woodland","Grassy Woodland"], minHigh:15, minPatchy:15, max:150, stages:[3,10,150]},
-  ipw:{name:"Inland Plains Woodland", evcs:["Plains Grassy Woodland","Alluvial Terraces Herb-rich Woodland"], minHigh:30, minPatchy:5, max:150, stages:[4,19,120]},
-  tsw:{name:"Treed Swampy Wetland", evcs:["Red Gum Swamp"], minHigh:30, minPatchy:20, max:150, stages:[3,8,30]},
-  bg:{name:"Basalt Grassland", evcs:["Plains Grassland"], minHigh:3, minPatchy:2, max:7, stages:[2,4,6]}
+  ghdf:{name:"Grassy/Heathy Dry Forest", cat:"Forests and woodlands", evd:3, max:45, minHigh:15, minPatchy:10, stages:[3, 10, 35], guide:"Grassy / Heathy Dry Forest"},
+  foot:{name:"Foothills Forest", cat:"Forests and woodlands", evd:8, max:100, minHigh:25, minPatchy:10, stages:[3, 10, 40]},
+  forby:{name:"Forby Forest", cat:"Forests and woodlands", evd:9, max:150, minHigh:15, minPatchy:15, stages:[3, 10, 40], guide:"Forby Forest"},
+  moist:{name:"Moist Forest", cat:"Forests and woodlands", evd:10, max:150, minHigh:25, minPatchy:25, stages:[11, 26, 100]},
+  ripar:{name:"Riparian (higher rainfall)", cat:"Forests and woodlands", evd:11, max:120, minHigh:30, minPatchy:30, stages:[11, 26, 100]},
+  gran:{name:"Granitic Hillslopes (eucalypt canopy)", cat:"Forests and woodlands", evd:17, max:90, minHigh:25, minPatchy:15, stages:[4, 10, 35], note:"Non-eucalypt canopy stands: 45 yr minimum after high-severity fire"},
+  ipw:{name:"Inland Plains Woodland", cat:"Forests and woodlands", evd:23, max:150, minHigh:30, minPatchy:5, stages:[4, 19, 120], guide:"Inland Plains Woodland"},
+  wpw:{name:"Western Plains Woodland", cat:"Forests and woodlands", evd:19, max:12, minHigh:30, minPatchy:4, stages:[3, 5, 9], note:"Cheal's maximum (12) is shorter than the high-severity minimum (30)"},
+  ironbox:{name:"Ironbark/Box", cat:"Forests and woodlands", evd:24, max:150, minHigh:30, minPatchy:12, stages:[3, 13, 25]},
+  riv:{name:"Riverine Woodland/Forest", cat:"Forests and woodlands", evd:25, max:null, minHigh:30, minPatchy:10, stages:[3, 8, 120], note:"Cheal sets no maximum"},
+  dwne:{name:"Dry Woodland (non-eucalypt)", cat:"Forests and woodlands", evd:22, max:null, minHigh:80, minPatchy:20, stages:[10, 60, null], note:"Cheal sets no maximum; maturity runs from 60 to 150+ yrs"},
+  coastw:{name:"Coastal (woodland)", cat:"Forests and woodlands", evd:1, max:70, minHigh:25, minPatchy:10, stages:null, note:"Cheal Table 2.4 lists Dune Soak Woodland under Coastal (woodland)"},
+  lowan:{name:"Lowan Mallee", cat:"Mallee", evd:31, max:65, minHigh:20, minPatchy:20, stages:[3, 9, 24]},
+  hgm:{name:"Hummock-grass Mallee", cat:"Mallee", evd:30, max:90, minHigh:25, minPatchy:25, stages:[4, 10, 35]},
+  sbm:{name:"Saltbush Mallee", cat:"Mallee", evd:29, max:200, minHigh:40, minPatchy:40, stages:[10, 30, null], note:"Maturity runs from 30 to 150+ yrs"},
+  broom:{name:"Broombush Whipstick", cat:"Mallee", evd:32, max:90, minHigh:20, minPatchy:20, stages:[3, 11, 41]},
+  heath:{name:"Heathland (sands)", cat:"Heaths, scrubs and rocky outcrops", evd:2, max:45, minHigh:12, minPatchy:12, stages:[3, 9, 34], note:"Cheal: min 8 yrs after low-severity fire where Xanthorrhoea resinosa dominates"},
+  heathd:{name:"Heathland (sands), Little and Big Deserts", cat:"Heaths, scrubs and rocky outcrops", evd:2, max:45, minHigh:15, minPatchy:15, stages:[3, 9, 34], note:"Cheal gives separate minimums for the Little and Big Deserts; applied in the Lowan Mallee bioregion"},
+  dscrub:{name:"Damp Scrub", cat:"Heaths, scrubs and rocky outcrops", evd:4, max:90, minHigh:20, minPatchy:15, stages:[3, 9, 25]},
+  rock:{name:"Rocky Knoll", cat:"Heaths, scrubs and rocky outcrops", evd:18, max:80, minHigh:20, minPatchy:12, stages:[3, 11, 25]},
+  bg:{name:"Basalt Grassland", cat:"Grasslands and chenopod shrublands", evd:20, max:7, minHigh:3, minPatchy:2, stages:[2, 4, 6], guide:"Basalt Grassland"},
+  apg:{name:"Alluvial Plains Grassland", cat:"Grasslands and chenopod shrublands", evd:21, max:30, minHigh:3, minPatchy:2, stages:[5, 5, 20], note:"Cheal gives no adolescence (young) stage"},
+  cheno:{name:"Chenopod Shrubland", cat:"Grasslands and chenopod shrublands", evd:28, max:null, minHigh:30, minPatchy:30, stages:[12, 30, null], note:"Cheal sets no maximum"},
+  tsw:{name:"Treed Swampy Wetland", cat:"Wetlands", evd:6, max:150, minHigh:30, minPatchy:20, stages:[3, 8, 30], guide:"Treed Swampy Wetland"},
+  fwp:{name:"Freshwater Wetland (permanent)", cat:"Wetlands", evd:5, max:null, minHigh:8, minPatchy:8, stages:null, note:"Cheal sets no maximum, and only renewal, juvenility and maturity stages"},
+  fwe:{name:"Freshwater Wetland (ephemeral)", cat:"Wetlands", evd:26, max:null, minHigh:2, minPatchy:2, stages:null, note:"Cheal sets no maximum, and only renewal and maturity stages"},
+  salw:{name:"Saline Wetland", cat:"Wetlands", evd:27, max:null, minHigh:20, minPatchy:10, stages:[5, 15, null], note:"Cheal sets no maximum"}
+};
+// EVC number -> fire group, for every EVC mapped (pre-1750 or 2005) in the Wimmera catchment. Mosaics and complexes take the
+// group of their first-named type. Built 2 Oct 2026; every match is listed for expert review in
+// 'Fire group matches for expert review.xlsx'. The guide's 10 hand matches (1.4) are kept.
+const EVC_DIV = {
+  3:"forby",6:"heath",8:"heath",13:"salw",16:"foot",18:"ripar",19:"ripar",20:"ghdf",22:"ghdf",23:"foot",28:"rock",29:"moist",30:"moist",45:"foot",
+  47:"forby",48:"ghdf",55:"ipw",56:"riv",61:"ironbox",65:"forby",66:"ipw",67:"ipw",68:"riv",69:"ghdf",70:"forby",71:"forby",72:"gran",73:"rock",
+  74:"fwe",76:"forby",77:"ipw",83:"ripar",87:"lowan",88:"lowan",89:"heath",90:"dscrub",91:"hgm",93:"broom",95:"sbm",96:"sbm",97:"dwne",98:"dwne",
+  101:"salw",102:"cheno",103:"riv",104:"fwe",107:"fwe",125:"fwe",132:"bg",134:"ghdf",136:"fwe",152:"ipw",164:"forby",165:"dscrub",175:"forby",
+  179:"ghdf",184:"heath",191:"dscrub",192:"rock",193:"rock",195:"tsw",198:"ripar",200:"fwe",241:"forby",264:"dwne",278:"ghdf",279:"heath",280:"riv",
+  282:"ghdf",283:"tsw",284:"fwe",285:"riv",291:"fwe",292:"tsw",350:"rock",351:"rock",355:"rock",357:"rock",361:"rock",371:"moist",372:"moist",
+  373:"moist",376:"foot",379:"foot",380:"foot",381:"foot",382:"foot",383:"foot",387:"foot",389:"ghdf",390:"ghdf",391:"ghdf",392:"ghdf",393:"ghdf",
+  396:"ghdf",399:"forby",401:"forby",408:"forby",409:"forby",411:"forby",413:"forby",414:"forby",418:"forby",421:"forby",423:"forby",438:"ghdf",
+  439:"ghdf",441:"ghdf",442:"ghdf",449:"ghdf",450:"ghdf",454:"ipw",468:"ghdf",477:"ghdf",481:"ghdf",485:"ghdf",487:"ghdf",489:"ghdf",493:"ghdf",
+  504:"heath",505:"heath",509:"dscrub",510:"dscrub",512:"dscrub",515:"ripar",516:"ripar",522:"ripar",547:"ghdf",558:"foot",559:"forby",587:"forby",
+  588:"dscrub",589:"moist",590:"foot",595:"heath",596:"dscrub",597:"moist",598:"rock",599:"ghdf",600:"foot",612:"ipw",634:"ghdf",636:"salw",640:"riv",
+  641:"riv",643:"salw",647:"fwe",650:"ghdf",651:"tsw",652:"ipw",653:"fwp",655:"fwe",656:"salw",657:"fwe",658:"riv",659:"riv",660:"ipw",663:"riv",
+  672:"forby",673:"coastw",676:"salw",677:"salw",679:"riv",680:"fwe",681:"fwp",685:"ironbox",691:"fwp",697:"forby",704:"ghdf",709:"rock",710:"heath",
+  711:"forby",717:"salw",718:"fwp",724:"ipw",726:"rock",727:"forby",729:"dwne",732:"forby",741:"salw",748:"forby",749:"forby",750:"forby",751:"tsw",
+  753:"rock",754:"heath",756:"ghdf",757:"forby",779:"forby",780:"tsw",783:"ghdf",785:"ghdf",787:"ipw",788:"forby",789:"forby",790:"ghdf",791:"forby",
+  798:"ripar",799:"ghdf",802:"forby",803:"ipw",813:"riv",822:"riv",823:"riv",824:"sbm",826:"ipw",830:"tsw",831:"tsw",832:"fwe",833:"fwe",834:"tsw",
+  881:"forby",882:"forby",885:"forby",886:"tsw",892:"ghdf",895:"rock",896:"forby",939:"fwe",940:"salw",941:"fwe",981:"lowan"
+};
+// The same group applies across bioregions, except where Cheal gives different figures for a bioregion.
+const BIO_DIV = {heath:{LoM_:"heathd"}};
+// Open water and unmapped land: no fire group, shown as "no fire interval set".
+const NO_FIRE = new Set([682,683,684,982,983,991,992,998,999]);
+// Name fallback for EVCs without a number match (outside the Wimmera inventory, or renamed).
+const NAME_DIV = {
+  "alluvial terraces herb-rich woodland":"ipw","aquatic herbland":"fwp","black box lignum woodland":"riv","box ironbark forest":"ironbox",
+  "brackish drainage-line aggregate":"salw","brackish lake aggregate":"salw","brackish sedgeland":"salw","brackish wetland":"salw",
+  "cane grass wetland":"fwe","claypan ephemeral wetland":"fwe","creekline grassy woodland":"riv","creekline herb-rich woodland":"forby",
+  "creekline sedgy woodland":"riv","damp forest":"moist","damp heath scrub":"dscrub","damp heathland":"heath","damp heathy woodland":"ghdf",
+  "damp sands herb-rich woodland":"forby","deep freshwater marsh":"fwp","drainage-line woodland":"riv","dry creekline woodland":"riv",
+  "dune soak woodland":"coastw","dunefield heathland":"heath","escarpment shrubland":"rock","floodplain riparian woodland":"riv",
+  "floodplain thicket":"riv","freshwater lake aggregate":"fwp","freshwater lignum shrubland":"fwe","freshwater meadow":"fwe",
+  "granitic hills woodland":"gran","grassy dry forest":"ghdf","grassy woodland":"forby","heathland thicket":"heath","heathy dry forest":"ghdf",
+  "heathy herb-rich woodland":"ghdf","heathy mallee":"lowan","heathy woodland":"ghdf","herb-rich foothill forest":"foot",
+  "herb-rich heathy forest":"ghdf","hillcrest herb-rich woodland":"forby","hills herb-rich woodland":"forby","inland saltmarsh":"salw",
+  "intermittent swampy woodland":"riv","lake bed herbland":"fwe","lateritic woodland":"ghdf","lignum swamp":"fwe","lignum swampy woodland":"riv",
+  "lignum-cane grass swamp":"fwe","loamy sands mallee":"hgm","low chenopod shrubland":"cheno","low rises woodland":"ipw","lowan sands mallee":"lowan",
+  "lowland forest":"foot","lunette woodland":"ipw","metamorphic slopes shrubby woodland":"ghdf","montane rocky shrubland":"rock",
+  "montane wet heathland":"heath","parilla mallee":"lowan","plains grassland":"bg","plains grassy wetland":"fwe","plains grassy woodland":"ipw",
+  "plains riparian shrubby woodland":"riv","plains savannah":"ipw","plains sedgy wetland":"fwe","plains sedgy woodland":"tsw",
+  "plains swampy woodland":"tsw","plains woodland":"ipw","red gum swamp":"tsw","red gum wetland":"tsw","red swale mallee":"sbm",
+  "ridged plains mallee":"sbm","riparian forest":"ripar","riparian scrub":"dscrub","riparian shrubland":"ripar","riparian woodland":"riv",
+  "riverine chenopod woodland":"riv","riverine grassy woodland":"riv","rocky outcrop herbland":"rock","rocky outcrop shrubland":"rock",
+  "saline lake":"salw","saline lake aggregate":"salw","salt paperbark woodland":"salw","salt paperbark woodland/samphire shrubland mosaic":"salw",
+  "samphire shrubland":"salw","samphire shrubland/saline lake mosaic":"salw","sand forest":"ghdf","sand heathland":"heath","sand ridge woodland":"dwne",
+  "sandstone ridge shrubland":"broom","scree-slope woodland":"rock","seasonally inundated shrubby woodland":"tsw","sedge wetland":"fwe",
+  "sedge-rich woodland":"forby","sedgy riparian woodland":"ripar","sedgy riverine forest":"riv","semi-arid chenopod woodland":"dwne",
+  "semi-arid woodland":"dwne","shallow freshwater marsh":"fwe","shallow sands woodland":"forby","shrubby foothill forest":"foot",
+  "shrubby woodland":"ghdf","spike-sedge wetland":"fwe","swamp scrub":"dscrub","swampy riparian woodland":"ripar","tea-tree scrub":"dscrub",
+  "valley grassy forest":"forby","wet forest":"moist","wet heathland":"heath","wetland formation":"fwe","woorinen mallee":"sbm"
 };
 const STAGE_NAMES = ["Juvenile","Young","Mature","Old"];
 // DEECA fire severity codes, used only to pre-fill the severity picker.
@@ -348,7 +429,7 @@ const SEV_CODES = {
 const SEV_RANK = {high:2, patchy:1, unknown:0};
 const RECORD_START = 1939;
 const NOW = new Date().getFullYear();
-const EXAMPLE = {lat:-37.2104, lng:142.6082, label:"Example block near Pomonal, Greater Grampians"};
+const EXAMPLE = {lat:-37.26094, lng:142.63431, label:"Example block near Pomonal, Greater Grampians"};
 // Inside claude.ai the page is a sandboxed preview that cannot reach outside map and data services.
 const IN_PREVIEW = typeof window.claude !== "undefined" || /claude\.ai|claudeusercontent/.test(location.hostname + " " + document.referrer);
 const PREVIEW_MSG = "This is a preview inside claude.ai, which can\u2019t reach the Victorian Government\u2019s map and data services, so the map and property profile won\u2019t load here. Open the lookup tool from the guide\u2019s public website to use it.";
@@ -412,15 +493,15 @@ function clip(f, aoi){
 function minus(a, b){ try{ return a ? turf.difference(a, b) : null; }catch(e){ return a; } }
 
 /* ---------- Wimmera catchment limit ----------
-   The tool only covers the Wimmera catchment, because the fire division table only has
-   the vegetation types found here. Boundary: outer edge of the Wimmera CMA Landcare network
+   The tool only covers the Wimmera catchment, because its EVC-to-fire-group table (EVC_DIV)
+   only has the vegetation types mapped here. Boundary: outer edge of the Wimmera CMA Landcare network
    areas (wca_LandcareNetworks_2007), dissolved and simplified to ~30 m. */
 const WIMMERA = {type:"Feature", properties:{}, geometry:{"type":"Polygon","coordinates":[[[140.96446,-35.94231],[140.99085,-35.9374],[140.99198,-35.92407],[141.02444,-35.91597],[141.02766,-35.91949],[141.03021,-35.91805],[141.02749,-35.91505],[141.0405,-35.91492],[141.05222,-35.90773],[141.05189,-35.8974],[141.06088,-35.88877],[141.05878,-35.8693],[141.05974,-35.868],[141.16313,-35.86757],[141.22302,-35.86833],[141.22371,-35.88819],[141.22566,-35.89354],[141.22168,-35.90766],[141.21734,-35.90754],[141.18186,-35.91034],[141.18219,-35.91583],[141.18315,-35.91687],[141.20163,-35.91685],[141.20149,-35.92469],[141.21579,-35.92727],[141.25912,-35.91295],[141.26202,-35.91542],[141.25579,-35.92471],[141.25503,-35.9383],[141.30115,-35.93885],[141.30186,-35.99955],[141.3374,-35.99972],[141.35176,-36.0096],[141.3781,-36.00561],[141.37616,-35.99999],[141.3714,-35.94473],[141.36201,-35.92973],[141.35117,-35.91369],[141.33829,-35.90641],[141.33251,-35.9059],[141.33203,-35.86827],[141.43542,-35.86768],[141.43625,-35.96157],[141.39608,-35.96171],[141.39561,-35.96641],[141.39904,-35.97581],[141.43649,-35.97555],[141.43663,-35.99985],[141.47377,-35.99971],[141.46818,-36.0326],[141.49747,-36.03575],[141.49671,-36.04124],[141.50057,-36.04135],[141.52986,-36.04462],[141.53265,-36.02697],[141.54424,-36.02822],[141.54887,-35.99959],[141.70885,-35.99921],[141.70432,-35.99427],[141.70538,-35.98629],[141.73116,-35.97509],[141.73058,-35.999],[141.73684,-35.99884],[141.73694,-35.99192],[141.73935,-35.99164],[141.73933,-35.98968],[141.75058,-35.98961],[141.75073,-35.98791],[141.76521,-35.98834],[141.78508,-35.98207],[141.78747,-35.97944],[141.79868,-35.97571],[141.80013,-35.97596],[141.80012,-35.97492],[141.80749,-35.97278],[141.80728,-35.9669],[141.81113,-35.96686],[141.81106,-35.95955],[141.8207,-35.95948],[141.84336,-35.92022],[141.8569,-35.92016],[141.87284,-35.90997],[141.87277,-35.90775],[141.86903,-35.90774],[141.86907,-35.80371],[141.89305,-35.80382],[141.89399,-35.78817],[141.89035,-35.74763],[141.90681,-35.6954],[141.9438,-35.66586],[141.97298,-35.65819],[142.00792,-35.68735],[142.02657,-35.71706],[142.02639,-35.82592],[141.99725,-35.82653],[141.99532,-35.99933],[142.09012,-35.9991],[142.60324,-35.99879],[142.60228,-36.02419],[142.60229,-36.14317],[142.67973,-36.09769],[142.71622,-36.07576],[142.71766,-36.07426],[142.71902,-36.07462],[142.71948,-36.07145],[142.79726,-36.07884],[142.79842,-36.07109],[142.86848,-36.07817],[142.86817,-36.08148],[142.88223,-36.08304],[142.88307,-36.09113],[142.88576,-36.09668],[142.88622,-36.09937],[142.86093,-36.12827],[142.84717,-36.20787],[142.84473,-36.21105],[142.84422,-36.21247],[142.84381,-36.21749],[142.84488,-36.22246],[142.84134,-36.2294],[142.84104,-36.23641],[142.84177,-36.24104],[142.84061,-36.24337],[142.83738,-36.24739],[142.83776,-36.25168],[142.83739,-36.25321],[142.83516,-36.25662],[142.83295,-36.26385],[142.83305,-36.26739],[142.83624,-36.27837],[142.83729,-36.28591],[142.83668,-36.28973],[142.83428,-36.2953],[142.83555,-36.30786],[142.83802,-36.31387],[142.83875,-36.31827],[142.84264,-36.32424],[142.84332,-36.32647],[142.84276,-36.3381],[142.84105,-36.34522],[142.8384,-36.34851],[142.83169,-36.35365],[142.8296,-36.35671],[142.82689,-36.37626],[142.82541,-36.3815],[142.82325,-36.38519],[142.81989,-36.38779],[142.81384,-36.39031],[142.80739,-36.39699],[142.80519,-36.398],[142.79965,-36.39903],[142.79781,-36.39987],[142.79436,-36.40384],[142.79002,-36.4054],[142.78757,-36.40875],[142.78597,-36.4121],[142.78591,-36.41758],[142.78547,-36.41826],[142.78426,-36.41899],[142.77659,-36.42086],[142.7745,-36.42387],[142.76966,-36.43741],[142.77083,-36.451],[142.77002,-36.45345],[142.76642,-36.45815],[142.76672,-36.46215],[142.76607,-36.46357],[142.7616,-36.46958],[142.76116,-36.47123],[142.76157,-36.47232],[142.76255,-36.47278],[142.76772,-36.47345],[142.76905,-36.47461],[142.77071,-36.47753],[142.77198,-36.48405],[142.77075,-36.49163],[142.76921,-36.49572],[142.76639,-36.49986],[142.76124,-36.50381],[142.76084,-36.50746],[142.7557,-36.51044],[142.75395,-36.51448],[142.75013,-36.51912],[142.74911,-36.52128],[142.74871,-36.53024],[142.74768,-36.53302],[142.73902,-36.53962],[142.73621,-36.54291],[142.7344,-36.54592],[142.73378,-36.54962],[142.73409,-36.55339],[142.73172,-36.56124],[142.73222,-36.56678],[142.73025,-36.57059],[142.73058,-36.57829],[142.72947,-36.58182],[142.72691,-36.5871],[142.72613,-36.59292],[142.72558,-36.60267],[142.72599,-36.61454],[142.72536,-36.61939],[142.71867,-36.6478],[142.71458,-36.65649],[142.7144,-36.65911],[142.71526,-36.66403],[142.71185,-36.67478],[142.70874,-36.67932],[142.7023,-36.68246],[142.70101,-36.68342],[142.69819,-36.68738],[142.69124,-36.69132],[142.68923,-36.6929],[142.68613,-36.70183],[142.68657,-36.70559],[142.68774,-36.70846],[142.68694,-36.70982],[142.68134,-36.71399],[142.68069,-36.71513],[142.68184,-36.71925],[142.68124,-36.72152],[142.67594,-36.72433],[142.67486,-36.72529],[142.67391,-36.72728],[142.67393,-36.73093],[142.67533,-36.73779],[142.67407,-36.74131],[142.67038,-36.74613],[142.66993,-36.74818],[142.67008,-36.75252],[142.67654,-36.76935],[142.67733,-36.78419],[142.67801,-36.78654],[142.68429,-36.80086],[142.68558,-36.80573],[142.68584,-36.81252],[142.68225,-36.8203],[142.68156,-36.82423],[142.68291,-36.83497],[142.68571,-36.84339],[142.68585,-36.85434],[142.68653,-36.85663],[142.68946,-36.86139],[142.69424,-36.86646],[142.69762,-36.86928],[142.69993,-36.87221],[142.70084,-36.87873],[142.7007,-36.88905],[142.70236,-36.89306],[142.70749,-36.89853],[142.71462,-36.90361],[142.73058,-36.9086],[142.74111,-36.91024],[142.76261,-36.91179],[142.77445,-36.91166],[142.78874,-36.91423],[142.79847,-36.91688],[142.80977,-36.91914],[142.81319,-36.91934],[142.82189,-36.91872],[142.82965,-36.92009],[142.84817,-36.92669],[142.85081,-36.92682],[142.85511,-36.92491],[142.85856,-36.9222],[142.86455,-36.91546],[142.86569,-36.91478],[142.8722,-36.91306],[142.8783,-36.90894],[142.88059,-36.90788],[142.888,-36.9081],[142.9131,-36.91268],[142.91917,-36.91232],[142.92595,-36.91083],[142.92803,-36.9097],[142.93084,-36.9067],[142.93977,-36.88953],[142.94244,-36.88624],[142.94502,-36.88472],[142.94624,-36.8845],[142.95428,-36.88547],[142.95613,-36.88491],[142.96115,-36.88203],[142.96608,-36.87984],[142.96922,-36.87924],[142.97435,-36.87967],[142.97685,-36.87883],[142.97881,-36.87519],[142.98044,-36.86762],[142.98286,-36.86113],[142.98361,-36.85714],[142.98586,-36.85282],[142.98836,-36.85135],[142.99327,-36.85195],[142.99655,-36.85146],[142.99827,-36.85016],[142.99993,-36.84732],[143.00165,-36.84602],[143.00878,-36.84515],[143.00971,-36.84516],[143.0124,-36.84666],[143.01943,-36.8487],[143.0246,-36.85118],[143.02844,-36.85224],[143.03058,-36.85202],[143.03286,-36.85084],[143.03745,-36.84739],[143.03923,-36.84688],[143.04329,-36.84759],[143.04676,-36.8491],[143.04839,-36.85042],[143.05029,-36.85305],[143.05545,-36.85696],[143.06074,-36.86282],[143.06628,-36.87352],[143.07164,-36.87902],[143.07246,-36.88331],[143.07444,-36.88486],[143.07565,-36.88515],[143.08106,-36.88547],[143.08913,-36.88318],[143.09362,-36.88343],[143.09654,-36.88225],[143.10308,-36.87487],[143.10637,-36.87306],[143.10894,-36.87256],[143.11577,-36.87294],[143.13174,-36.87149],[143.13531,-36.86951],[143.13811,-36.86702],[143.1409,-36.86538],[143.14539,-36.86409],[143.14958,-36.86645],[143.1534,-36.87018],[143.15851,-36.87151],[143.16107,-36.87278],[143.16446,-36.87617],[143.16615,-36.87931],[143.17176,-36.88117],[143.17439,-36.88272],[143.181,-36.88429],[143.18427,-36.88454],[143.18662,-36.8846],[143.19711,-36.88243],[143.20194,-36.88325],[143.20358,-36.88394],[143.20774,-36.88978],[143.21391,-36.89426],[143.22172,-36.89766],[143.22995,-36.90215],[143.23131,-36.90244],[143.23366,-36.90205],[143.24294,-36.89884],[143.24565,-36.89828],[143.24921,-36.89904],[143.25297,-36.90131],[143.25497,-36.90644],[143.25637,-36.91203],[143.25919,-36.91641],[143.26012,-36.91911],[143.25946,-36.92348],[143.25558,-36.93012],[143.25516,-36.93197],[143.25557,-36.93318],[143.25729,-36.93451],[143.26415,-36.93693],[143.26601,-36.93804],[143.26745,-36.93959],[143.26784,-36.9432],[143.26753,-36.94416],[143.26119,-36.94885],[143.25686,-36.95094],[143.25581,-36.95195],[143.2526,-36.95544],[143.25036,-36.95882],[143.24115,-36.96784],[143.23971,-36.97114],[143.24076,-36.97461],[143.2443,-36.98004],[143.2454,-36.98339],[143.24526,-36.98452],[143.24342,-36.98772],[143.24272,-36.99067],[143.24335,-37.00039],[143.2439,-37.00156],[143.24608,-37.00375],[143.25116,-37.00649],[143.25464,-37.00921],[143.25553,-37.01012],[143.25595,-37.01291],[143.25375,-37.01726],[143.2494,-37.02032],[143.22529,-37.03084],[143.22099,-37.0334],[143.21645,-37.03767],[143.21606,-37.03927],[143.21644,-37.04107],[143.21933,-37.04577],[143.22499,-37.04929],[143.23376,-37.05231],[143.24211,-37.05657],[143.24953,-37.05962],[143.25902,-37.06261],[143.2674,-37.06595],[143.28832,-37.07511],[143.293,-37.07801],[143.30181,-37.08215],[143.3102,-37.08352],[143.32738,-37.0845],[143.33285,-37.08598],[143.33618,-37.08742],[143.34424,-37.09344],[143.35111,-37.09987],[143.35417,-37.10373],[143.35829,-37.11043],[143.36054,-37.1162],[143.36263,-37.12527],[143.36183,-37.13537],[143.36024,-37.14053],[143.35891,-37.14261],[143.35334,-37.15012],[143.34981,-37.15348],[143.34472,-37.15732],[143.33888,-37.16053],[143.33478,-37.16353],[143.31735,-37.17114],[143.31516,-37.17314],[143.31417,-37.17544],[143.31494,-37.18188],[143.3164,-37.18568],[143.32229,-37.1908],[143.32365,-37.19328],[143.32299,-37.19573],[143.32132,-37.19787],[143.31838,-37.20021],[143.31461,-37.20501],[143.31396,-37.20625],[143.31417,-37.20709],[143.31981,-37.21342],[143.32408,-37.21719],[143.32644,-37.22214],[143.32626,-37.2249],[143.32537,-37.2271],[143.32435,-37.22903],[143.321,-37.233],[143.3201,-37.235],[143.32003,-37.23671],[143.32125,-37.23899],[143.32747,-37.24211],[143.32981,-37.24436],[143.33207,-37.25054],[143.33934,-37.26309],[143.33901,-37.27455],[143.3383,-37.27951],[143.33618,-37.28645],[143.33643,-37.28883],[143.33808,-37.29239],[143.32719,-37.29466],[143.31445,-37.29473],[143.31057,-37.29418],[143.29482,-37.29029],[143.28405,-37.28854],[143.27619,-37.2881],[143.26572,-37.28829],[143.25546,-37.28948],[143.24599,-37.2922],[143.23844,-37.29562],[143.22046,-37.30912],[143.21505,-37.31125],[143.20709,-37.31312],[143.19651,-37.31804],[143.19219,-37.32075],[143.18954,-37.32316],[143.18544,-37.32805],[143.1782,-37.33238],[143.17116,-37.33524],[143.16729,-37.33599],[143.16118,-37.33611],[143.15549,-37.33467],[143.14694,-37.33116],[143.13361,-37.32424],[143.12805,-37.31985],[143.12461,-37.31545],[143.12057,-37.30612],[143.11837,-37.29742],[143.11587,-37.29235],[143.11143,-37.28734],[143.10204,-37.28047],[143.09932,-37.27623],[143.09894,-37.27374],[143.09936,-37.27239],[143.10269,-37.26689],[143.10435,-37.26153],[143.10434,-37.26012],[143.10212,-37.25276],[143.09987,-37.24925],[143.09159,-37.24459],[143.08754,-37.2439],[143.08275,-37.24394],[143.07073,-37.247],[143.06809,-37.24698],[143.06146,-37.24522],[143.05103,-37.23979],[143.04615,-37.23777],[143.03525,-37.23785],[143.02986,-37.23684],[143.02805,-37.23611],[143.02517,-37.23386],[143.0193,-37.22663],[143.01151,-37.22121],[143.00765,-37.21665],[143.00175,-37.21166],[142.9999,-37.20703],[142.99698,-37.20571],[142.99205,-37.2015],[142.99096,-37.19942],[142.99024,-37.19355],[142.9913,-37.18301],[142.98987,-37.17954],[142.9872,-37.17812],[142.9789,-37.17794],[142.97706,-37.17728],[142.97558,-37.17612],[142.97117,-37.16923],[142.96696,-37.16702],[142.96561,-37.16704],[142.95957,-37.16933],[142.95754,-37.17113],[142.95679,-37.17253],[142.95605,-37.17557],[142.9559,-37.18501],[142.95658,-37.19383],[142.95243,-37.20361],[142.94991,-37.2077],[142.94704,-37.21033],[142.94506,-37.21145],[142.94351,-37.2117],[142.93572,-37.21028],[142.93182,-37.21063],[142.92887,-37.21236],[142.92512,-37.21636],[142.92325,-37.21958],[142.92245,-37.22214],[142.92227,-37.22722],[142.92055,-37.23736],[142.91845,-37.24422],[142.91744,-37.24546],[142.91449,-37.24749],[142.90675,-37.2508],[142.8984,-37.25676],[142.88894,-37.25829],[142.88822,-37.25918],[142.88799,-37.26064],[142.8891,-37.26782],[142.88884,-37.26981],[142.88591,-37.27324],[142.8831,-37.27465],[142.87452,-37.27711],[142.86339,-37.27768],[142.85995,-37.27909],[142.85754,-37.28122],[142.85693,-37.28236],[142.85615,-37.29027],[142.85847,-37.30922],[142.85674,-37.33353],[142.85932,-37.33795],[142.86852,-37.34522],[142.87015,-37.34774],[142.87084,-37.35069],[142.87092,-37.35487],[142.86933,-37.36047],[142.86915,-37.36591],[142.86817,-37.36803],[142.86711,-37.36874],[142.86294,-37.36947],[142.85741,-37.36773],[142.85417,-37.36443],[142.8507,-37.35915],[142.84774,-37.35654],[142.84459,-37.35615],[142.83583,-37.3585],[142.83112,-37.35827],[142.82998,-37.35771],[142.82702,-37.3549],[142.82439,-37.35399],[142.82002,-37.35354],[142.8111,-37.35143],[142.80786,-37.35106],[142.78904,-37.34578],[142.78215,-37.34499],[142.76818,-37.34221],[142.75633,-37.34043],[142.74838,-37.34041],[142.71998,-37.34372],[142.71599,-37.34431],[142.70861,-37.34626],[142.68399,-37.35067],[142.67334,-37.35071],[142.66092,-37.34954],[142.63014,-37.34936],[142.62331,-37.35019],[142.60928,-37.35395],[142.59751,-37.3543],[142.59042,-37.35327],[142.58482,-37.35344],[142.58226,-37.3543],[142.57606,-37.35433],[142.57497,-37.3537],[142.57412,-37.35244],[142.57468,-37.35007],[142.57719,-37.34633],[142.58593,-37.33902],[142.58781,-37.33557],[142.5922,-37.33156],[142.59315,-37.32956],[142.59225,-37.3263],[142.5896,-37.32314],[142.58696,-37.31765],[142.58461,-37.31565],[142.5827,-37.31473],[142.5763,-37.31407],[142.57344,-37.31333],[142.5574,-37.30658],[142.54882,-37.30177],[142.53535,-37.29105],[142.52942,-37.2893],[142.51954,-37.28551],[142.517,-37.28378],[142.51472,-37.28124],[142.51391,-37.27835],[142.5141,-37.26558],[142.51368,-37.26349],[142.51228,-37.25814],[142.50927,-37.25372],[142.50615,-37.24783],[142.50554,-37.24433],[142.5057,-37.2377],[142.50443,-37.23393],[142.50222,-37.23058],[142.50166,-37.22836],[142.50132,-37.22301],[142.50276,-37.21769],[142.50395,-37.20537],[142.50228,-37.19282],[142.50053,-37.1891],[142.4976,-37.18673],[142.49339,-37.18521],[142.48112,-37.18316],[142.47888,-37.18194],[142.47719,-37.17989],[142.47722,-37.17767],[142.48352,-37.16938],[142.48515,-37.16645],[142.48532,-37.16446],[142.48349,-37.16108],[142.47898,-37.15832],[142.47437,-37.15676],[142.456,-37.15293],[142.45328,-37.1527],[142.44923,-37.15131],[142.44259,-37.14992],[142.43815,-37.1493],[142.43178,-37.14928],[142.42496,-37.14699],[142.4221,-37.14503],[142.41594,-37.13849],[142.41007,-37.13405],[142.40552,-37.12957],[142.40082,-37.12396],[142.39948,-37.11786],[142.39785,-37.11621],[142.39077,-37.11337],[142.38075,-37.11015],[142.35584,-37.10426],[142.33617,-37.10352],[142.33113,-37.10441],[142.32814,-37.10651],[142.32682,-37.10921],[142.32828,-37.11198],[142.33348,-37.11738],[142.33437,-37.11903],[142.33388,-37.12328],[142.33233,-37.12534],[142.32674,-37.12763],[142.32015,-37.12863],[142.31502,-37.12993],[142.30722,-37.13011],[142.30244,-37.12832],[142.29818,-37.12596],[142.2934,-37.12111],[142.29129,-37.11692],[142.29015,-37.113],[142.28804,-37.10898],[142.28679,-37.10522],[142.28545,-37.10087],[142.28461,-37.09399],[142.28182,-37.08623],[142.27908,-37.08184],[142.27437,-37.07684],[142.26394,-37.06874],[142.25767,-37.06678],[142.23404,-37.0625],[142.22877,-37.063],[142.22388,-37.0624],[142.21907,-37.06291],[142.20314,-37.06662],[142.18159,-37.07262],[142.17342,-37.0753],[142.16761,-37.07603],[142.15493,-37.07547],[142.14994,-37.07626],[142.13898,-37.08231],[142.13339,-37.086],[142.11888,-37.09728],[142.11572,-37.09843],[142.11187,-37.09839],[142.10635,-37.0962],[142.10459,-37.09598],[142.10099,-37.09636],[142.09565,-37.09881],[142.09229,-37.10137],[142.08856,-37.10586],[142.07773,-37.12569],[142.07481,-37.134],[142.07184,-37.14533],[142.0707,-37.14865],[142.0692,-37.15114],[142.0675,-37.15276],[142.06596,-37.15313],[142.06232,-37.14824],[142.06076,-37.1473],[142.05976,-37.14724],[142.05662,-37.1489],[142.05393,-37.15287],[142.05195,-37.15843],[142.05164,-37.16127],[142.05257,-37.17786],[142.05229,-37.1819],[142.04879,-37.18943],[142.04672,-37.19607],[142.04495,-37.19918],[142.04213,-37.2012],[142.02912,-37.20797],[142.02185,-37.21031],[142.01816,-37.21085],[142.0166,-37.21077],[142.01425,-37.20989],[142.01354,-37.20894],[142.01298,-37.20467],[142.0131,-37.18683],[142.01417,-37.18019],[142.01657,-37.1714],[142.0168,-37.16964],[142.01612,-37.16508],[142.01385,-37.16238],[142.00641,-37.15847],[142.00061,-37.1546],[141.99731,-37.15144],[141.99647,-37.14962],[141.9965,-37.14104],[142.00009,-37.1251],[141.99996,-37.12252],[141.99748,-37.11735],[141.99163,-37.11159],[141.98914,-37.10996],[141.97898,-37.10533],[141.97093,-37.10282],[141.93928,-37.096],[141.92876,-37.09478],[141.91421,-37.09236],[141.894,-37.08783],[141.87012,-37.08362],[141.85116,-37.0795],[141.82765,-37.0769],[141.81272,-37.07719],[141.80689,-37.07777],[141.80296,-37.07869],[141.79495,-37.08206],[141.79053,-37.08444],[141.78836,-37.08638],[141.78473,-37.09275],[141.78054,-37.10447],[141.77997,-37.11565],[141.77702,-37.1271],[141.77613,-37.13386],[141.77479,-37.13527],[141.77179,-37.13693],[141.77005,-37.13717],[141.76745,-37.13679],[141.76481,-37.13595],[141.75419,-37.12784],[141.7525,-37.12683],[141.75212,-37.12709],[141.7484,-37.12476],[141.73832,-37.11467],[141.72227,-37.10121],[141.7019,-37.08188],[141.68757,-37.07085],[141.68323,-37.06836],[141.66708,-37.06089],[141.65289,-37.05622],[141.64266,-37.05499],[141.62994,-37.05453],[141.62215,-37.05556],[141.61928,-37.05642],[141.61715,-37.05715],[141.61162,-37.06066],[141.60543,-37.06676],[141.60159,-37.07209],[141.59361,-37.08054],[141.59095,-37.08468],[141.59085,-37.0857],[141.58864,-37.08964],[141.58534,-37.09373],[141.58066,-37.09724],[141.57579,-37.09981],[141.57352,-37.10042],[141.54212,-37.10353],[141.5338,-37.10635],[141.5171,-37.11405],[141.508,-37.11671],[141.50443,-37.11679],[141.49369,-37.11557],[141.48297,-37.11498],[141.47285,-37.11569],[141.46005,-37.11818],[141.44064,-37.12428],[141.4368,-37.12485],[141.43298,-37.12519],[141.42108,-37.12349],[141.41761,-37.12248],[141.40687,-37.11753],[141.40146,-37.11589],[141.39898,-37.11562],[141.38661,-37.1167],[141.37413,-37.1188],[141.36067,-37.12227],[141.35214,-37.12564],[141.33678,-37.13318],[141.31253,-37.14342],[141.30241,-37.14692],[141.29149,-37.15214],[141.28147,-37.15759],[141.25813,-37.17144],[141.25416,-37.17417],[141.23733,-37.18789],[141.21984,-37.19803],[141.20983,-37.20176],[141.20333,-37.20293],[141.19436,-37.20526],[141.18684,-37.2063],[141.18248,-37.20626],[141.17123,-37.2035],[141.15364,-37.1973],[141.13082,-37.19066],[141.12504,-37.18852],[141.11992,-37.18745],[141.10841,-37.18601],[141.09075,-37.18476],[141.08344,-37.18491],[141.07727,-37.18572],[141.07344,-37.18679],[141.06656,-37.18991],[141.05605,-37.19732],[141.04667,-37.20833],[141.03177,-37.20765],[140.99982,-37.20438],[140.97012,-37.20288],[140.97058,-37.19429],[140.97019,-37.1805],[140.97054,-37.03741],[140.96787,-36.73798],[140.96713,-36.49989],[140.96601,-36.37489],[140.96637,-36.32736],[140.96447,-36.13832],[140.96446,-35.94231]]]}};
 const WIM_BOUNDS = [[-37.3695,140.9644],[-35.6582,143.3626]];
 const WIM_EDGE = turf.buffer(WIMMERA, 0.2, {units:"kilometers"});
 const inWimmera = (lng, lat) => turf.booleanPointInPolygon(turf.point([lng, lat]), WIM_EDGE);
 const BIG_PARCEL_HA = 3000;
-const OUTSIDE_MSG = "That spot is outside the Wimmera catchment. This lookup tool only covers properties in the Wimmera CMA region, because its fire tables only include the vegetation types found here. The outlined area on the map shows where it works.";
+const OUTSIDE_MSG = "That spot is outside the Wimmera catchment. This lookup tool only covers properties in the Wimmera CMA region, because its fire interval matches only cover the vegetation types mapped here. The outlined area on the map shows where it works.";
 
 /* ---------- map ---------- */
 const map = L.map("map", {zoomControl:true, attributionControl:true}).setView([EXAMPLE.lat, EXAMPLE.lng], 14);
@@ -550,12 +631,16 @@ async function analyse(id){
 }
 
 /* ---------- processing ---------- */
-function divisionFor(name){
+// EVC number first (with any bioregion split), then the name, then the first matching part of a mosaic or complex.
+function divisionFor(name, evc, bio){
+  const split = id => (id && BIO_DIV[id] && bio && BIO_DIV[id][bio]) || id || null;
+  if(evc != null && EVC_DIV[evc]) return split(EVC_DIV[evc]);
   if(!name) return null;
-  const parts = [name].concat(name.replace(/ (Mosaic|Complex|Aggregate)$/i,"").split(/\s*\/\s*/));
-  for(const p of parts){ for(const [id,d] of Object.entries(DIVS)) if(d.evcs.some(e => e.toLowerCase() === p.trim().toLowerCase())) return id; }
+  const parts = [name].concat(name.replace(/\s*\(syn\.? [^)]*\)/i,"").replace(/ (Mosaic|Complex|Aggregate)$/i,"").split(/\s*\/\s*/));
+  for(const p of parts){ const id = NAME_DIV[p.trim().toLowerCase()]; if(id) return split(id); }
   return null;
 }
+const noFire = e => !!e && e.evc != null && NO_FIRE.has(Number(e.evc));
 
 function process(){
   const R = S.raw, aoi = S.aoi;
@@ -579,7 +664,7 @@ function process(){
       const e = m.get(k) || {key:k, evc:p.evc, name, bcs:p.evc_bcs_desc, group:p.x_groupname, bio:p.bioregion_code, bioName:p.bioregion, ha:0, pieces:[]};
       e.ha += haOf(c); e.pieces.push(c); m.set(k,e); }
     const list = [...m.values()].sort((a,b)=>b.ha-a.ha);
-    for(const e of list){ e.autoDiv = divisionFor(e.name); }
+    for(const e of list){ e.autoDiv = divisionFor(e.name, e.evc, e.bio); }
     return list;
   };
   S.v05 = veg(R.v05, true);
@@ -646,12 +731,12 @@ function sevOf(year){
   const s = (S.seasons||[]).find(x=>x.year===year);
   return s ? s.sevAuto : "unknown";
 }
-// A user choice is stored per vegetation entry; "" means "not in the guide's table". No entry = use the state mapping's match.
+// A user choice is stored per vegetation entry; "" means "no fire group". No entry = use the EVC table's match.
 function divOf(entry){ if(!entry) return null; const u = S.user.div[entry.key]; return u === undefined || u === null ? entry.autoDiv : (u || null); }
-// "auto" = matched from the state mapping; "changed" = user overrode a match; "chosen" = user picked one where there was no match.
+// "auto" = matched from the EVC table; "changed" = user overrode a match; "chosen" = user picked one where there was no match.
 function divStatus(e){ const u = S.user.div[e.key]; if(u === undefined || u === null || (u || null) === (e.autoDiv || null)) return e.autoDiv ? "auto" : "none"; return e.autoDiv ? "changed" : "chosen"; }
 function divStatusText(e){ const st = divStatus(e), auto = e.autoDiv ? DIVS[e.autoDiv].name : null;
-  return st === "auto" ? "matched from the state mapping" : st === "changed" ? `changed by you; the state mapping matches ${auto}` : st === "chosen" ? "chosen by you; no match in the state mapping" : ""; }
+  return st === "auto" ? "matched from its EVC number" : st === "changed" ? `changed by you; its EVC matches ${auto}` : st === "chosen" ? "chosen by you; its EVC has no fire group" : noFire(e) ? "open water or unmapped: no fire interval set" : ""; }
 
 // Cross vegetation pieces with fire patches → rows for the interval check.
 function overlayRows(){
@@ -686,7 +771,7 @@ function assess(row){
     if(sev === "high") v = gap < d.minHigh ? "bad" : "ok";
     else if(sev === "patchy") v = gap < d.minPatchy ? "bad" : "ok";
     else v = gap < d.minPatchy ? "bad" : gap < d.minHigh ? "warn" : "ok";
-    if(v === "ok" && gap > d.max) v = "long";
+    if(v === "ok" && d.max != null && gap > d.max) v = "long";
     out.gaps.push({from:ys[i-1], to:ys[i], gap, sev, v});
   }
   if(ys.length){
@@ -695,13 +780,13 @@ function assess(row){
     const minFwd = sev === "patchy" ? d.minPatchy : d.minHigh;
     out.safeFrom = last + minFwd;
     if(sev === "unknown" && d.minPatchy !== d.minHigh) out.safeFromPatchy = last + d.minPatchy;
-    out.dueBy = last + d.max;
-    out.status = out.since > d.max ? "overdue" : NOW < out.safeFrom ? "recovering" : "within";
+    out.dueBy = d.max != null ? last + d.max : null;   // no maximum set: never "past maximum"
+    out.status = d.max != null && out.since > d.max ? "overdue" : NOW < out.safeFrom ? "recovering" : "within";
   } else {
     out.since = NOW - RECORD_START; out.noRecord = true;
-    out.status = out.since > d.max ? "overdue" : "within";
+    out.status = d.max != null && out.since > d.max ? "overdue" : "within";
   }
-  if(d.stages){ const [a,b,c] = d.stages; const y = out.since; out.stage = y < a ? 0 : y < b ? 1 : y < c ? 2 : 3; }
+  if(d.stages){ const [a,b,c] = d.stages; const y = out.since; out.stage = y < a ? 0 : y < b ? 1 : (c == null || y < c) ? 2 : 3; }
   return out;
 }
 
@@ -808,15 +893,18 @@ function clearBioZoom(refit){
   if(refit && S && selLayer.getLayers().length) map.fitBounds(selLayer.getBounds(), {maxZoom:16, padding:[30,30]});
 }
 
-const divOptions = sel => `<option value="">Not in the guide’s table</option>` + Object.entries(DIVS).map(([id,d])=>`<option value="${id}"${sel===id?" selected":""}>${esc(d.name)}</option>`).join("");
+const divOptions = sel => `<option value="">No fire group</option>` +
+  [...new Set(Object.values(DIVS).map(d => d.cat))].map(cat => `<optgroup label="${esc(cat)}">` +
+    Object.entries(DIVS).filter(([,d]) => d.cat === cat).map(([id,d])=>`<option value="${id}"${sel===id?" selected":""}>${esc(d.name)}</option>`).join("") + `</optgroup>`).join("");
 function bcsChip(b){ if(!b) return ""; const cls = /endangered|vulnerable|depleted/i.test(b) ? (/endangered/i.test(b) ? "bad" : "warn") : "ok"; return `<span class="chip ${cls}">${esc(b)}</span>`; }
 
 function divCell(e){
   const st = divStatus(e);
-  const lab = st === "auto" ? `<div class="divst"><span class="chip ok">From state mapping</span></div>`
+  const lab = st === "auto" ? `<div class="divst"><span class="chip ok">Matched from EVC</span></div>`
+    : st === "none" && noFire(e) ? `<div class="divst"><span class="chip mute">No fire interval set</span></div><div class="note">Open water or unmapped land</div>`
     : st === "none" ? `<div class="note">Not matched. Choose one only with advice from your Landcare group</div>`
     : `<div class="divst"><span class="chip warn">${st === "changed" ? "Changed by you" : "Chosen by you"}</span> <button type="button" class="linkbtn" data-divreset="${esc(e.key)}">${st === "changed" ? "Reset to " + esc(DIVS[e.autoDiv].name) : "Clear"}</button></div>`;
-  return `<td><select data-divkey="${esc(e.key)}" aria-label="Fire division for ${esc(e.name)}">${divOptions(divOf(e))}</select>${lab}</td>`;
+  return `<td><select data-divkey="${esc(e.key)}" aria-label="Fire group for ${esc(e.name)}">${divOptions(divOf(e))}</select>${lab}</td>`;
 }
 
 function render12(){
@@ -833,7 +921,7 @@ function render12(){
     if(v.length){
       const top = v[0];
       html += `<p class="answer">Most of the bush on your block is mapped as <b>${esc(top.name)}${top.evc!=null?` (${top.evc})`:""}</b>${v.length>1?`, with ${v.length-1} other vegetation type${v.length>2?"s":""}`:""}.</p>`;
-      html += `<div class="scroller"><table><thead><tr><th>EVC</th><th>Conservation status in this bioregion</th><th>Fire division (for 1.4)</th><th class="n">Area</th></tr></thead><tbody>` +
+      html += `<div class="scroller"><table><thead><tr><th>EVC</th><th>Conservation status in this bioregion</th><th>Fire group (for 1.4)</th><th class="n">Area</th></tr></thead><tbody>` +
       v.map((e,i)=>`<tr class="hl" data-veg="${i}"><td><b>${esc(e.name)}</b>${e.evc!=null?` <span class="note">(${e.evc})</span>`:""}</td><td>${bcsChip(e.bcs)}</td>${divCell(e)}
         <td class="n">${fmtHa(e.ha)} ha<br><span class="note">${fmtPct(e.ha/S.ha)}</span></td></tr>`).join("") +
       (cleared > Math.max(0.05, S.ha*0.01) ? `<tr><td colspan="3"><span class="note">No native vegetation mapped (cleared, paddock, or too small to map)</span></td><td class="n">${fmtHa(cleared)} ha<br><span class="note">${fmtPct(cleared/S.ha)}</span></td></tr>` : "") +
@@ -846,7 +934,7 @@ function render12(){
     else if(pre.length){
       const top = pre[0];
       html += `<p class="answer">Before 1750, most of your block is modelled as <b>${esc(top.name)}${top.evc!=null?` (${top.evc})`:""}</b>${pre.length>1?`, with ${pre.length-1} other vegetation type${pre.length>2?"s":""}`:""}.</p>`;
-      html += `<div class="scroller"><table><thead><tr><th>Pre-1750 EVC</th><th>Conservation status</th>${usingPre?`<th>Fire division (for 1.4)</th>`:""}<th class="n">Area</th></tr></thead><tbody>` +
+      html += `<div class="scroller"><table><thead><tr><th>Pre-1750 EVC</th><th>Conservation status</th>${usingPre?`<th>Fire group (for 1.4)</th>`:""}<th class="n">Area</th></tr></thead><tbody>` +
       pre.map((e,i)=>`<tr class="hl" data-pre="${i}"><td><b>${esc(e.name)}</b>${e.evc!=null?` <span class="note">(${e.evc})</span>`:""}</td><td>${bcsChip(e.bcs)}</td>${usingPre?divCell(e):""}<td class="n">${fmtHa(e.ha)} ha<br><span class="note">${fmtPct(e.ha/S.ha)}</span></td></tr>`).join("") + `</tbody></table></div>`;
       if(usingPre) html += `<p class="note">No vegetation is mapped here in 2005, so the fire interval check in 1.4 uses these pre-1750 types.</p>`;
     } else html += `<p class="answer">No pre-1750 vegetation is modelled on this block.</p>`;
@@ -1060,7 +1148,7 @@ function render14(){
   const worst = S.assessed.filter(x=>x.a.gaps.some(g=>g.v==="bad") || x.a.status==="recovering");
   const over = S.assessed.filter(x=>x.a.status==="overdue");
   let lead;
-  if(!S.assessed.length) lead = `None of the vegetation on this block matches a division in the guide’s table yet. Pick one for each EVC in 1.2 to see its intervals.`;
+  if(!S.assessed.length) lead = `None of the vegetation on this block has a fire group with tolerable intervals. If you think one applies, choose it for each EVC in 1.2.`;
   else if(S.assessed.some(x=>x.a.gaps.some(g=>g.v==="bad"))) lead = `Part of your block has had <b>two fires that may have been too close together</b> for its vegetation type.`;
   else if(S.assessed.some(x=>x.a.gaps.some(g=>g.v==="warn"))) lead = `Part of your block had two fires close enough that it <b>depends on how severe the earlier one was</b>. Set severity in 1.3 if you know it.`;
   else if(worst.length) lead = `Your bush is <b>recovering from its last fire</b> and within its tolerable range. Another fire before ${Math.max(...worst.map(x=>x.a.safeFrom))} would come too soon.`;
@@ -1068,12 +1156,18 @@ function render14(){
   else lead = `The fire intervals on your block <b>sit within the tolerable range</b> for its vegetation.`;
   let html = `<p class="answer">${lead}</p>`;
   if(ov.usingPre) html += `<p class="note">No 2005 vegetation is mapped here, so this uses the pre-1750 vegetation type.</p>`;
-  html += `<h3 class="subhead">${S.assessed.length ? "Tolerable fire intervals for your vegetation" : "Tolerable fire intervals by vegetation division"}</h3>`;
-  html += `<div class="scroller"><table><thead><tr><th>Vegetation division</th><th class="n">Min after high severity</th><th class="n">Min after patchy fire</th><th class="n">Max</th></tr></thead><tbody>` +
-    (() => { const mine = new Set(S.assessed.map(x=>x.row.div)); const showAll = SHOW_ALL_DIVS || !mine.size;
-      return Object.entries(DIVS).filter(([id]) => showAll || mine.has(id)).map(([id,d])=>`<tr${showAll && mine.has(id)?` style="font-weight:600"`:""}><td>${esc(d.name)}</td><td class="n">${d.minHigh}</td><td class="n">${d.minPatchy}</td><td class="n">${d.max}</td></tr>`).join(""); })() + `</tbody></table></div>`;
+  html += `<h3 class="subhead">${S.assessed.length ? "Tolerable fire intervals for your vegetation" : "Tolerable fire intervals by fire group"}</h3>`;
+  const mine = new Set(S.assessed.map(x=>x.row.div)); const showAll = SHOW_ALL_DIVS || !mine.size;
+  html += `<div class="scroller"><table><thead><tr><th>Fire group</th><th class="n">Min after high severity</th><th class="n">Min after patchy fire</th><th class="n">Max</th></tr></thead><tbody>` +
+    [...new Set(Object.values(DIVS).map(d => d.cat))].map(cat => {
+      const rows = Object.entries(DIVS).filter(([id,d]) => d.cat === cat && (showAll || mine.has(id)));
+      if(!rows.length) return "";
+      return (showAll ? `<tr><th colspan="4">${esc(cat)}</th></tr>` : "") + rows.map(([id,d])=>`<tr${showAll && mine.has(id)?` style="font-weight:600"`:""}><td>${esc(d.name)}${d.guide?` <span class="note">(guide 1.4: ${esc(d.guide)})</span>`:""}${d.note && mine.has(id)?`<br><span class="note">${esc(d.note)}</span>`:""}</td><td class="n">${d.minHigh}</td><td class="n">${d.minPatchy}</td><td class="n">${d.max ?? `<span class="note">none set</span>`}</td></tr>`).join("");
+    }).join("") + `</tbody></table></div>`;
+  html += `<p class="row"><button type="button" class="linkbtn" id="showalldivs">${showAll && mine.size ? "Show only your vegetation’s fire groups" : mine.size ? `Show all ${Object.keys(DIVS).length} fire groups` : ""}</button></p>`;
+  html += `<p class="note">Intervals from Cheal (2010), the source of DEECA’s tolerable fire interval tables. Fire groups are DEECA’s Ecological Fire Groups. Each EVC’s fire group is matched by its EVC number and is still being checked by an ecologist.</p>`;
   if(S.tlRows.length) html += `<h3 class="subhead">Fire timeline for each part of your block</h3>`;
-  html += `<div class="legend stack"><span><i style="background:var(--long)"></i>Longer than may be tolerated by sensitive plants</span><span><i style="background:var(--accent)"></i>Within tolerable fire interval</span><span><i style="background:var(--ochre)"></i>Within tolerable fire interval, if earlier fire was patchy</span><span><i style="background:var(--ember)"></i>Shorter than may be tolerated by sensitive plants</span><span><i style="background:repeating-linear-gradient(45deg,var(--ember-soft) 0 3px,var(--ember) 3px 4px)"></i>Sensitive plants may not tolerate a future fire within this interval</span>${noDiv.length ? `<span><i style="background:var(--muted)"></i>Fire history only: this vegetation isn’t in the fire interval table yet</span>` : ""}</div>`;
+  html += `<div class="legend stack"><span><i style="background:var(--long)"></i>Longer than may be tolerated by sensitive plants</span><span><i style="background:var(--accent)"></i>Within tolerable fire interval</span><span><i style="background:var(--ochre)"></i>Within tolerable fire interval, if earlier fire was patchy</span><span><i style="background:var(--ember)"></i>Shorter than may be tolerated by sensitive plants</span><span><i style="background:repeating-linear-gradient(45deg,var(--ember-soft) 0 3px,var(--ember) 3px 4px)"></i>Sensitive plants may not tolerate a future fire within this interval</span>${noDiv.length ? `<span><i style="background:var(--muted)"></i>Fire history only: no fire interval set for this vegetation</span>` : ""}</div>`;
   html += `<p class="note">The map shades each part of your block in the colour of its most pressing status (a fire gap that was too short first, then one that depends on severity, then too long without fire, then still recovering). The square beside each timeline matches.</p>`;
   html += `<div class="tl">` + S.assessed.map(({row, a}, i) => {
     const d = DIVS[row.div];
@@ -1081,20 +1175,22 @@ function render14(){
     a.gaps.forEach(g => { const minTxt = g.sev==="high" ? `${DIVS[row.div].minHigh} yr minimum after a high-severity fire` : g.sev==="patchy" ? `${d.minPatchy} yr minimum after a patchy fire` : `${d.minPatchy}–${d.minHigh} yr minimum, depending on severity`;
       const chip = g.v==="bad" ? `<span class="chip bad">inside minimum</span>` : g.v==="warn" ? `<span class="chip warn">depends on severity</span>` : g.v==="long" ? `<span class="chip long">past maximum</span>` : `<span class="chip ok">OK</span>`;
       lines.push(`<div>${chip} ${g.from} → ${g.to}: ${g.gap} years ${g.v==="long" ? `against a ${d.max} year maximum` : `against a ${minTxt}`}.</div>`); });
-    if(a.noRecord) lines.push(`<div>${a.status==="overdue"?`<span class="chip long">past maximum</span>`:`<span class="chip ok">OK</span>`} No recorded fire in ${a.since}+ years. The maximum for ${esc(d.name)} is ${d.max} years.</div>`);
+    const maxTxt = d.max != null ? `The maximum for ${esc(d.name)} is ${d.max} years.` : `No maximum interval is set for ${esc(d.name)}.`;
+    if(a.noRecord) lines.push(`<div>${a.status==="overdue"?`<span class="chip long">past maximum</span>`:`<span class="chip ok">OK</span>`} No recorded fire in ${a.since}+ years. ${maxTxt}</div>`);
     else {
       if(a.status==="recovering") lines.push(`<div><span class="chip warn">recovering</span> Last burnt ${a.last}. A fire before <b>${a.safeFrom}</b> would be inside the minimum${a.safeFromPatchy?` (${a.safeFromPatchy} if the ${a.last} fire was patchy here)`:""}.</div>`);
       else if(a.status==="overdue") lines.push(`<div><span class="chip long">past maximum</span> ${a.since} years since fire. The maximum for ${esc(d.name)} is ${d.max} years.</div>`);
-      else lines.push(`<div><span class="chip ok">within range</span> ${a.since} years since fire: past the minimum, and short of the ${d.max} year maximum (${a.dueBy}).</div>`);
+      else lines.push(`<div><span class="chip ok">within range</span> ${a.since} years since fire: past the minimum${d.max != null ? `, and short of the ${d.max} year maximum (${a.dueBy})` : `. No maximum interval is set for ${esc(d.name)}`}.</div>`);
     }
-    return `<div class="tlrow" data-row="${i}"><div class="head"><b>${esc(d.name)}</b><span>${esc([...row.evcs].join(", "))} · ${fmtHa(row.ha)} ha (${fmtPct(row.ha/S.ha)})</span>${[...(S.v05||[]), ...(S.v1750||[])].some(v => row.evcs.has(v.name) && divOf(v) === row.div && ["changed","chosen"].includes(divStatus(v))) ? `<span class="chip warn">Division set by you in 1.2</span>` : ""}</div>${timelineSVG(row,a)}</div>`;
+    return `<div class="tlrow" data-row="${i}"><div class="head"><b>${esc(d.name)}</b><span>${esc([...row.evcs].join(", "))} · ${fmtHa(row.ha)} ha (${fmtPct(row.ha/S.ha)})</span>${[...(S.v05||[]), ...(S.v1750||[])].some(v => row.evcs.has(v.name) && divOf(v) === row.div && ["changed","chosen"].includes(divStatus(v))) ? `<span class="chip warn">Fire group set by you in 1.2</span>` : ""}</div>${timelineSVG(row,a)}</div>`;
   }).join("") + S.unassessed.map(({row, a}, j) => {
     const ys = row.years;
     const info = ys.length ? `burnt ${ys.join(", ")}` : `no recorded fire since ${RECORD_START}`;
-    return `<div class="tlrow unassessed" data-row="${S.assessed.length + j}"><div class="head"><b>${esc([...row.evcs].join(", "))}</b><span>${info} · ${fmtHa(row.ha)} ha (${fmtPct(row.ha/S.ha)})</span><span class="chip mute">No fire interval in the table yet</span></div>${timelineSVG(row,a)}</div>`;
+    return `<div class="tlrow unassessed" data-row="${S.assessed.length + j}"><div class="head"><b>${esc([...row.evcs].join(", "))}</b><span>${info} · ${fmtHa(row.ha)} ha (${fmtPct(row.ha/S.ha)})</span><span class="chip mute">No fire interval set</span></div>${timelineSVG(row,a)}</div>`;
   }).join("") + `</div>`;
-  if(noDiv.length) html += `<p class="note">Grey timelines show only the fire history of ${[...new Set(noDiv.flatMap(r=>[...r.evcs]))].length>1?"vegetation types":"a vegetation type"} not yet in the fire interval table. Choose a division in 1.2 if your Landcare group can advise one.</p>`;
+  if(noDiv.length) html += `<p class="note">Grey timelines show only the fire history of ${[...new Set(noDiv.flatMap(r=>[...r.evcs]))].length>1?"vegetation types":"a vegetation type"} with no fire group (open water, or no match). Choose a fire group in 1.2 if your Landcare group can advise one.</p>`;
   $("#s14 .body").innerHTML = html;
+  const sab = $("#showalldivs"); if(sab){ if(!sab.textContent) sab.parentNode.remove(); else sab.addEventListener("click", () => { SHOW_ALL_DIVS = !SHOW_ALL_DIVS; render14(); }); }
   hover("#s14 .tlrow", el => S.tlRows[+el.dataset.row].row.pieces, el => STATUS_COL[statusOf(S.tlRows[+el.dataset.row].a)]);
 
 }
@@ -1116,17 +1212,19 @@ function render15(){
     return out; })();
   const other = S.assessed.filter(x=>!DIVS[x.row.div].stages);
   let html = "";
-  if(!S.assessed.length){ $("#s15 .body").innerHTML = `<p class="note">Growth stage needs a vegetation division. Choose one in 1.2.</p>`; return; }
+  if(!S.assessed.length){ $("#s15 .body").innerHTML = `<p class="note">Growth stage needs a fire group. Choose one in 1.2.</p>`; return; }
   if(staged.length){
     const counts = [0,0,0,0]; staged.forEach(x=>counts[x.a.stage]+=x.row.ha);
     const main = counts.indexOf(Math.max(...counts));
     html += `<p class="answer">Most of your mapped bush is at the <b>${STAGE_NAMES[main].toLowerCase()}</b> growth stage.</p>`;
     html += `<div class="stlegend">${STAGE_NAMES.map((n,i)=>`<span><i style="background:${STAGE_COLORS[i]}"></i>${n}</span>`).join("")}<span>· shown on the map while this section is on screen</span></div>`;
     html += staged.map(({row,a},j) => { const d = DIVS[row.div]; const [p,q,r] = d.stages;
+      // A stage Cheal doesn't describe for this group (no young stage, or no old stage) shows as "not described".
+      const spans = [`0–${p} yrs`, p===q ? null : `${p}–${q} yrs`, r==null ? `${q}+ yrs` : `${q}–${r} yrs`, r==null ? null : `${r}+ yrs`];
       return `<div class="tlrow" data-stg="${j}"><div class="head"><b>${esc(d.name)}</b><span>${a.noRecord?`no recorded fire (${a.since}+ years)`:`${a.since} year${a.since===1?"":"s"} since ${a.last}`} · ${fmtHa(row.ha)} ha</span></div>
-      <div class="stagebar">${[`0–${p}`,`${p}–${q}`,`${q}–${r}`,`${r}+`].map((t,i)=>`<div class="${i===a.stage?"on":""}"${i===a.stage?` style="background:${STAGE_COLORS[i]};color:${i<2?"#1B221E":"#fff"}"`:""}>${STAGE_NAMES[i]}<br>${t} yrs</div>`).join("")}</div></div>`; }).join("");
+      <div class="stagebar">${spans.map((t,i)=>`<div class="${i===a.stage?"on":""}"${i===a.stage?` style="background:${STAGE_COLORS[i]};color:${i<2?"#1B221E":"#fff"}"`:""}>${STAGE_NAMES[i]}<br>${t ?? "not described"}</div>`).join("")}</div></div>`; }).join("");
   }
-  if(other.length) html += `<p class="note">The guide gives no stage boundaries for ${esc([...new Set(other.map(x=>DIVS[x.row.div].name))].join(" and "))}, so ${other.length>1?"they aren’t":"it isn’t"} staged here.</p>`;
+  if(other.length) html += `<p class="note">Cheal (2010) gives no matching stage boundaries for ${esc([...new Set(other.map(x=>DIVS[x.row.div].name))].join(" and "))}, so ${other.length>1?"they aren’t":"it isn’t"} staged here.</p>`;
   html += `<div class="callout"><p><b>NOTE:</b> Growth stage counts from the last fire, so a patch can read as juvenile while still holding old trees that survived. A burnt tree with hollows intact is old-growth habitat whatever the age class says.</p></div>`;
   $("#s15 .body").innerHTML = html;
   staged.forEach(({row,a}) => row.pieces.forEach(pc => stageLayer.addData(turf.feature(pc.geometry, {stage:a.stage}))));
@@ -1334,7 +1432,7 @@ function writeDownText(){
   if(S.geol && S.geol.length) L.push(`    Geology: ` + S.geol.map(g=>`${g.unit} (${g.lith.replace(/\.$/,"")}) ${fmtPct(g.ha/S.ha)}`).join("; "));
   L.push("");
   L.push(`1.2 VEGETATION TODAY (2005 EVC):`);
-  (S.v05||[]).forEach(e=>L.push(`    ${e.name}${e.evc!=null?` (EVC ${e.evc})`:""}: ${fmtHa(e.ha)} ha, ${fmtPct(e.ha/S.ha)}${e.bcs?`, ${e.bcs}`:""}${divOf(e)?` -> ${DIVS[divOf(e)].name}`:(divStatus(e)==="changed"?" -> no division":"")}${divStatusText(e)?` (${divStatusText(e)})`:""}`));
+  (S.v05||[]).forEach(e=>L.push(`    ${e.name}${e.evc!=null?` (EVC ${e.evc})`:""}: ${fmtHa(e.ha)} ha, ${fmtPct(e.ha/S.ha)}${e.bcs?`, ${e.bcs}`:""}${divOf(e)?` -> ${DIVS[divOf(e)].name}`:(divStatus(e)==="changed"?" -> no fire group":"")}${divStatusText(e)?` (${divStatusText(e)})`:""}`));
   if(S.v05 && !S.v05.length) L.push(`    none mapped`);
   L.push(`    PRE-1750 EVC: ` + ((S.v1750||[]).map(e=>`${e.name}${e.evc!=null?` (EVC ${e.evc})`:""} ${fmtPct(e.ha/S.ha)}`).join("; ") || "none mapped"));
   L.push("");
@@ -1350,7 +1448,7 @@ function writeDownText(){
     if(a.status==="recovering") L.push(`      recovering: next fire should not come before ${a.safeFrom}`);
     if(a.status==="overdue") L.push(`      past the ${d.max} yr maximum`);
   });
-  if(S.assessed && !S.assessed.length) L.push(`    no vegetation matched to a division yet`);
+  if(S.assessed && !S.assessed.length) L.push(`    no vegetation matched to a fire group`);
   L.push("");
   L.push(`1.5 GROWTH STAGE:`);
   (S.assessed||[]).filter(x=>DIVS[x.row.div].stages).forEach(({row,a})=>L.push(`    ${DIVS[row.div].name}, ${fmtHa(row.ha)} ha: ${STAGE_NAMES[a.stage]} (${a.noRecord?`${a.since}+`:a.since} yrs since fire)`));
