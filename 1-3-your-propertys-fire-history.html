@@ -6,7 +6,7 @@
 <title>1.3 Your property&rsquo;s fire history</title>
 <meta name="description" content="You know when your place last burnt. The useful question is when it burnt before that. Section 1.4 turns on the interval between fires, not on any single fir">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
-<script>try{if(localStorage.getItem("bfp:theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<script>try{var t=localStorage.getItem("bfp:theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-sec="1.3">
@@ -39,6 +39,7 @@
 <a class="here" href="1-3-your-propertys-fire-history.html"><span class="n">1.3</span>Your property&rsquo;s fire history</a>
 <a href="1-4-how-often-should-this-country-burn.html"><span class="n">1.4</span>How often should this country burn?</a>
 <a href="1-5-growth-stages.html"><span class="n">1.5</span>Growth stages</a>
+<a href="1-6-bringing-part-1-together.html"><span class="n">1.6</span>Bringing Part 1 together</a>
 <h6><a href="part-2-what-comes-back-by-itself.html">Part 2 &middot; What comes back by itself</a></h6>
 <a href="2-1-the-recovery-timeline.html"><span class="n">2.1</span>The recovery timeline</a>
 <a href="2-2-how-plants-come-back-and-which-ones-wont.html"><span class="n">2.2</span>How plants come back &mdash; and which ones won&rsquo;t</a>
@@ -80,69 +81,51 @@
 <nav class="crumb"><a href="index.html">Guide</a> <i>&rsaquo;</i> <a href="part-1-where-you-are.html">Part 1 &middot; Where you are</a> <i>&rsaquo;</i> <b>1.3</b></nav>
 <article class="section">
   <div class="sec-head"><span class="sn">1.3</span><h1>Your property&rsquo;s fire history</h1></div>
-  <p>You know when your place last burnt. The useful question is when it burnt before that. Section <a href="1-4-how-often-should-this-country-burn.html">1.4</a> turns on the interval between fires, not on any single fire.</p>
-
+  <p>At this stage we know our block&rsquo;s vegetation types and how they are expected to respond to fire.</p>
+      <p>So now we need the block&rsquo;s fire history. How the bush responds to the most recent fire depends on how often it has burnt before. We are interested in the interval between fires, not just any single fire.</p>
+      <p>The lookup tool uses the Victorian Government&rsquo;s fire history maps, which go back to 1939. Before you look up your fire history, there are a few things to keep in mind.</p>
+      <p><strong>Not all fires have been mapped.</strong> Coverage is best for large fires on public land. Small and older fires on freehold are recorded patchily. A blank is not evidence that nothing burnt.</p>
+      <p><strong>The map shows perimeters, not severity.</strong> The fire history maps don&rsquo;t show the difference between an extremely hot fire that removed entire canopy layers and a cooler, patchier fire. Ground shown inside a fire boundary may still contain patches that didn&rsquo;t burn. The state has separate severity mapping for some recent fires, modelled from aerial and satellite imagery, and the lookup tool uses it where it exists.<sup class="fn"><a id="fnref-1.3-1" href="#fn-1.3-1" aria-label="Source 1">1</a></sup><sup class="fn"><a id="fnref-1.3-2" href="#fn-1.3-2" aria-label="Source 2">2</a></sup></p>
+      <figure class="fig draft" id="fig-1-3-1"><div class="fimgs n1"><div class="fi"><img src="img/pests_s06_1.jpg" alt="Fire history of the Grampians National Park, 2005&ndash;2024 (left) and the 2025 fire (right)." loading="lazy"></div></div><figcaption>Fire history of the Grampians National Park, 2005&ndash;2024 (left) and the 2025 fire (right).<span class="fsrc"><b>Draft image</b> &middot; Pauline Rudolph, Parks Victoria, Pomonal talk</span></figcaption></figure>
       <div class="portal">
         <span class="lbl">In the lookup tool: section 1.3</span>
-        <p>In the <a href="block-fire-profile.html" target="_blank" rel="noopener">Wimmera Bushfire Ecology Lookup Tool</a>, section 1.3, <em>Your property&rsquo;s fire history</em>, lists every fire season on the state record for your block since 1939: the fire&rsquo;s name, whether it was a bushfire or a planned burn, how much of your block it burnt, and how severe it was. Hover over a fire to see its whole mapped extent in red, with the part on your block in yellow. Click a fire to zoom out to all of it; click it again to come back to your block.</p>
+        <p>In the <a href="block-fire-profile.html" target="_blank" rel="noopener">Wimmera Bushfire Ecology Lookup Tool</a>, section 1.3, <em>Your property&rsquo;s fire history</em>, lists every fire on the state record for your block since 1939: the fire&rsquo;s name, whether it was a bushfire or a planned burn, how much of your block it burnt, and how severe it was. The map shades each fire in its own colour, oldest in orange through to the most recent in deep red. Click a fire to highlight the part of your block it burnt in yellow. <em>Show the whole fire on the map</em> zooms out to everything that fire burnt, and <em>Back to your block</em> brings you home.</p>
       </div>
-
-      <div class="ph">
-        <span class="t">Screenshot</span>
-        <p class="d">Portal section 1.3 for the example block: the summary sentence and the fire table (1939, 2006, 2024), with the severity column.</p>
-        <p class="s">Capture from the lookup tool on the example block near Pomonal (the block it opens on). Crop to section 1.3.</p>
-      </div>
-
-      <div class="ph">
-        <span class="t">Screenshot</span>
-        <p class="d">The map while hovering over the 2024 fire in section 1.3: the whole mapped fire in red, the part on the example block in yellow, the block outline in white.</p>
-        <p class="s">Capture from the lookup tool on the example block near Pomonal (the block it opens on). Click the 2024 row so the map zooms out to the whole fire, then capture the map.</p>
-      </div>
-
-      <div class="case">
+      <div class="demo">
         <span class="who">Follow along &middot; the example block near Pomonal</span>
-        <p>The state record shows three fire seasons on the example block: <strong>1939</strong> and <strong>2006</strong>, and the <strong>December 2024</strong> Pomonal fire. The gaps between them are 67 years and 18 years. Section 1.4 turns those gaps into a verdict.</p>
-        <p>Hovering over the 2024 fire puts the block in context: the block is a small piece of a much larger burnt area, which is what makes any part of it that escaped so valuable (section 1.5). And the fire map shows a boundary, not what burnt inside it. Ground inside a fire outline is rarely burnt evenly.</p>
+        <figure class="fig tool" id="fig-1-3-tool"><div class="fimgs n1"><div class="fi"><img class="only-light" src="img/tool-1-3-light.jpg" alt="Section 1.3 of the lookup tool for the example block: four fires on the record, 2025, 2006, 1990 and 1939, with the area of the block each burnt, and the block shaded by fire on the map." loading="lazy"><img class="only-dark" src="img/tool-1-3-dark.jpg" alt="Section 1.3 of the lookup tool for the example block: four fires on the record, 2025, 2006, 1990 and 1939, with the area of the block each burnt, and the block shaded by fire on the map." loading="lazy"></div></div><figcaption>Section 1.3 for the example block: four fires on the record, two of which burnt only part of the block.<span class="fsrc">Wimmera Bushfire Ecology Lookup Tool &middot; example block near Pomonal &middot; October 2026</span></figcaption></figure>
+        <div class="case">
+          <p>The state record shows four fires on the example block: a bushfire in <strong>1939</strong>, a small <strong>1990</strong> planned burn that caught 11 hectares in one corner, the <strong>2006</strong> Mt Lubra fire, and the <strong>2025</strong> Yarram Gap Road fire. The table gives each fire&rsquo;s season and name, whether it was a bushfire or a planned burn, and how much of the block falls inside its mapped boundary. The 1939 and 2006 fires covered the whole block. The 2025 fire covered 98 hectares, 58% of it, and the rest escaped. Section 1.4 turns the gaps between those fires into a verdict, part by part.</p>
+          <p>Clicking the 2025 fire turns the part of the block it burnt yellow, and <em>Show the whole fire on the map</em> zooms out to show the block was a small piece of a fire that ran through much of the Grampians. That is what makes the part that escaped so valuable (section <a href="1-5-growth-stages.html">1.5</a>).</p>
+          <p>The last column, <em>How severe was it here?</em>, is filled in from the state&rsquo;s severity mapping where it exists. None of these fires has severity mapping on this block, so it reads <em>Not sure</em>. If you saw the fire, or the ground straight after it, set it yourself: <em>High</em> means crowns burnt with few unburnt patches, <em>Patchy</em> means the canopy was mostly intact. Section 1.4 uses it. Under the table you can also add fires the record missed, such as one you, a previous owner or a neighbour remembers.</p>
+        </div>
       </div>
-
-      <h4>Reading the table</h4>
-
-      <ul>
-        <li><strong>Season and fire</strong> &mdash; the fire season and the fire&rsquo;s name, tagged as a bushfire or a planned burn.</li>
-        <li><strong>Area of your block burnt</strong> &mdash; how much of the block falls inside that fire&rsquo;s mapped boundary.</li>
-        <li><strong>How severe was it here?</strong> &mdash; filled in from the state&rsquo;s severity mapping where it exists (the line underneath says what the record shows). If you saw the fire, or the ground straight after it, set it yourself: <em>high</em> means crowns burnt with few unburnt patches, <em>patchy</em> means the canopy was mostly intact. Section 1.4 uses this.</li>
-        <li><strong>Add fires the record missed</strong> &mdash; a fire you, a previous owner or a neighbour remembers. Added fires count across the whole block in section 1.4.</li>
-      </ul>
-
-      <figure class="fig draft" id="fig-1-3-1"><div class="fimgs n1"><div class="fi"><img src="img/pests_s06_1.jpg" alt="Fire history of the Grampians National Park, 2005&ndash;2024 (left) and the 2025 fire (right)." loading="lazy"></div></div><figcaption>Fire history of the Grampians National Park, 2005&ndash;2024 (left) and the 2025 fire (right).<span class="fsrc"><b>Draft image</b> &middot; Pauline Rudolph, Parks Victoria, Pomonal talk</span></figcaption></figure>
-      <figure class="fig draft" id="fig-1-6-2"><div class="fimgs n1"><div class="fi"><img src="img/readland_s26_1.jpg" alt="Mapped fire history for the Pomonal property." loading="lazy"></div></div><figcaption>Mapped fire history for the Pomonal property.<span class="fsrc"><b>Draft image</b> &middot; Yasmin Kelsall talk. Check the landholder is happy for the property to be identifiable</span></figcaption></figure>
-      <h4>What the record doesn&rsquo;t tell you</h4>
-
-      <ul>
-        <li><strong>It maps what was mapped.</strong> Coverage is best for large fires on public land. Small and older fires on freehold are recorded patchily. A blank is not evidence that nothing burnt.</li>
-        <li><strong>Perimeters, not severity.</strong> Ground shown inside a fire boundary almost always contains patches that didn&rsquo;t burn &mdash; and those matter (section <a href="1-4-how-often-should-this-country-burn.html">1.4</a>). The severity layer itself is modelled from aerial and satellite imagery, not walked on the ground, so it carries real error.<sup class="fn"><a id="fnref-1.3-1" href="#fn-1.3-1" aria-label="Source 1">1</a></sup><sup class="fn"><a id="fnref-1.3-2" href="#fn-1.3-2" aria-label="Source 2">2</a></sup></li>
-        <li><strong>It stops at 1939.</strong> Your own memory, the previous owner&rsquo;s and the neighbours&rsquo; is real evidence. Historical aerial photography from the 1940s and 50s can settle arguments.</li>
-      </ul>
-
-      <p>Two fires inside the minimum interval isn&rsquo;t a disaster, but it tells you to watch the shrub layer (section <a href="2-2-how-plants-come-back-and-which-ones-wont.html">2.2</a>).</p>
-
-      <div class="wefound">
-        <span class="lbl">What we found</span>
-        <p>Cumulative fire in Gariwerd has been severe &mdash; around 215,000 hectares of overlapping fire in two decades. The private blocks around it had generally carried at most two fires in twenty years. If you are on private land near a heavily burnt park, the park&rsquo;s fire history is probably not yours.<sup class="fn"><a id="fnref-1.3-3" href="#fn-1.3-3" aria-label="Source 3">3</a></sup></p>
+      <h4>Your block in the landscape</h4>
+      <p>Your block&rsquo;s fire history means more once you know what happened to the bush around it. A block that escaped when most of the country around it burnt is a <strong>refuge</strong>: it may be sheltering animals with nowhere else to go, and it holds the seed and shelter the burnt country will recover from. A block that burnt when the bush around it didn&rsquo;t is a <strong>burnt island</strong>: plants and animals have unburnt country close by to come back from, so recovery may be quicker. And where nearly everything burnt, every unburnt patch counts, on your block or your neighbour&rsquo;s.</p>
+      <div class="portal">
+        <span class="lbl">In the lookup tool: your block in the landscape</span>
+        <p>At the bottom of section 1.3, the <a href="block-fire-profile.html" target="_blank" rel="noopener">Wimmera Bushfire Ecology Lookup Tool</a> looks at the native bush within 5 km of your block and how much of it burnt in your block&rsquo;s most recent fire. It gives a one-line summary, then the share of the surrounding bush that burnt, the share of your block&rsquo;s bush that burnt, and how much of the unburnt bush nearby is on your block. <em>Show the 5 km around your block on the map</em> zooms out to show it: unburnt bush in teal, burnt bush in orange, inside a dashed 5 km ring.</p>
       </div>
-
+      <div class="demo">
+        <span class="who">Follow along &middot; the example block near Pomonal</span>
+        <figure class="fig tool" id="fig-1-3-land"><div class="fimgs n1"><div class="fi"><img class="only-light" src="img/tool-1-3-landscape-light.jpg" alt="The Your block in the landscape panel for the example block: 79% of the bush within 5 km burnt in 2025, 70% of the block&rsquo;s bush burnt, and 29 ha of unburnt bush on the block out of about 1,720 ha within 5 km." loading="lazy"><img class="only-dark" src="img/tool-1-3-landscape-dark.jpg" alt="The Your block in the landscape panel for the example block: 79% of the bush within 5 km burnt in 2025, 70% of the block&rsquo;s bush burnt, and 29 ha of unburnt bush on the block out of about 1,720 ha within 5 km." loading="lazy"></div></div><figcaption><em>Your block in the landscape</em> for the example block.<span class="fsrc">Wimmera Bushfire Ecology Lookup Tool &middot; example block near Pomonal &middot; October 2026</span></figcaption></figure>
+        <figure class="fig tool" id="fig-1-3-landmap"><div class="fimgs n1"><div class="fi"><img class="only-light" src="img/tool-1-3-landscape-map-light.jpg" alt="The map zoomed out to 5 km around the example block: most of the surrounding bush shaded orange as burnt in 2025, with teal unburnt bush mostly to the north-east." loading="lazy"><img class="only-dark" src="img/tool-1-3-landscape-map-dark.jpg" alt="The map zoomed out to 5 km around the example block: most of the surrounding bush shaded orange as burnt in 2025, with teal unburnt bush mostly to the north-east." loading="lazy"></div></div><figcaption>The 5 km around the example block: bush that burnt in 2025 in orange, unburnt bush in teal.<span class="fsrc">Wimmera Bushfire Ecology Lookup Tool &middot; example block near Pomonal &middot; October 2026</span></figcaption></figure>
+        <div class="case">
+          <p>Around the example block, the 2025 fire was widespread. About <strong>79% of the bush within 5 km</strong> burnt, and 70% of the block&rsquo;s own mapped bush. The tool sums it up as <em>&ldquo;Most of the bush within 5 km burnt in 2025, your block included.&rdquo;</em></p>
+          <p>So the block isn&rsquo;t a lone refuge: its 29 hectares of unburnt bush are a small share of about 1,700 hectares still unburnt within 5 km. But in country that burnt this heavily, those patches are where recovery starts from, for the plants and animals on the block and for the burnt bush next door. That is why the unburnt part of the block is worth protecting first (section <a href="1-5-growth-stages.html">1.5</a>).</p>
+          <p>As with the fire table, &ldquo;burnt&rdquo; here means inside the mapped fire boundary, and the bush is the state&rsquo;s 2005 vegetation mapping. Unburnt patches inside the fire boundary, and bush cleared or regrown since 2005, won&rsquo;t show.</p>
+        </div>
+      </div>
       <p class="srcnote"><strong>Where this comes from.</strong> DEECA&rsquo;s fire history records, published on <a href="https://discover.data.vic.gov.au/dataset/fire-history-records-of-fires-across-victoria">DataVic</a> as <em>Fire History Records of Fires across Victoria</em> and <em>Fire History showing the number of times areas have been burnt</em>.<sup class="fn"><a href="#fn-1.3-1" aria-label="Source 1">1</a></sup> Forest Fire Management Victoria also publishes <a href="https://www.ffm.vic.gov.au/history-and-incidents/past-bushfires/past-bushfire-maps">maps of the major bushfires</a> since 1939. If you&rsquo;d rather not use the lookup tool, your Landcare facilitator, CMA or council can map your block&rsquo;s fire history in a few minutes.</p>
-
       <div class="needs">
         <span class="lbl">Needed</span>
-        <p>Check that the lookup tool loads the state data once the guide is live on GitHub Pages. Confirm the 1939 and 2006 fire extents for the example block against the lookup tool screenshot rather than the workshop slide.</p>
+        <p>The lookup tool loads the state data from the guide&rsquo;s GitHub Pages site (checked 2 October 2026). If the landholder can say how hot the 2025 fire ran on the example block, set it in the tool and update 1.4.</p>
       </div>
 </article>
 <section class="sources" aria-label="Sources">
 <h4>Sources</h4>
 <ol><li id="fn-1.3-1">Pauline Rudolph, Manager Environmental Values, Forest Fire and Operations Division (Grampians), DEECA, in her talk at the Reading the Landscape workshop, Pomonal, September 2026. <a class="backref" href="#fnref-1.3-1" aria-label="Back to text">&#8617;</a></li>
-<li id="fn-1.3-2">Cawson, J. and Muir, A. (2008) <em>Flora Monitoring Protocols for Planned Burning: a rationale report</em>. Fire and Adaptive Management Report No. 75, Department of Sustainability and Environment, Victoria. <a class="srclink" href="https://www.ffm.vic.gov.au/__data/assets/pdf_file/0025/21130/Report-75-Flora-Monitoring-Protocols-For-Planned-Burning_-A-Rationale.pdf">www.ffm.vic.gov.au</a> <a class="backref" href="#fnref-1.3-2" aria-label="Back to text">&#8617;</a></li>
-<li id="fn-1.3-3">Project Platypus, Wimmera Landcare Fire Recovery Partnership &mdash; unpublished monitoring data from the nine demonstration properties, 2025&ndash;26. <a class="backref" href="#fnref-1.3-3" aria-label="Back to text">&#8617;</a></li></ol>
+<li id="fn-1.3-2">Cawson, J. and Muir, A. (2008) <em>Flora Monitoring Protocols for Planned Burning: a rationale report</em>. Fire and Adaptive Management Report No. 75, Department of Sustainability and Environment, Victoria. <a class="srclink" href="https://www.ffm.vic.gov.au/__data/assets/pdf_file/0025/21130/Report-75-Flora-Monitoring-Protocols-For-Planned-Burning_-A-Rationale.pdf">www.ffm.vic.gov.au</a> <a class="backref" href="#fnref-1.3-2" aria-label="Back to text">&#8617;</a></li></ol>
 </section>
 <nav class="pager">
 <a class="prev" href="1-2-finding-your-vegetation-type.html"><span>Previous</span>1.2 Finding your vegetation type</a>

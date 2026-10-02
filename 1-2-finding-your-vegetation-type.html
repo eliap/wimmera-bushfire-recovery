@@ -6,7 +6,7 @@
 <title>1.2 Finding your vegetation type</title>
 <meta name="description" content="How often your bush should burn, what should return on its own, and what belongs there if you ever replant all hang off one answer: which vegetation type you">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
-<script>try{if(localStorage.getItem("bfp:theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<script>try{var t=localStorage.getItem("bfp:theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-sec="1.2">
@@ -39,6 +39,7 @@
 <a href="1-3-your-propertys-fire-history.html"><span class="n">1.3</span>Your property&rsquo;s fire history</a>
 <a href="1-4-how-often-should-this-country-burn.html"><span class="n">1.4</span>How often should this country burn?</a>
 <a href="1-5-growth-stages.html"><span class="n">1.5</span>Growth stages</a>
+<a href="1-6-bringing-part-1-together.html"><span class="n">1.6</span>Bringing Part 1 together</a>
 <h6><a href="part-2-what-comes-back-by-itself.html">Part 2 &middot; What comes back by itself</a></h6>
 <a href="2-1-the-recovery-timeline.html"><span class="n">2.1</span>The recovery timeline</a>
 <a href="2-2-how-plants-come-back-and-which-ones-wont.html"><span class="n">2.2</span>How plants come back &mdash; and which ones won&rsquo;t</a>
@@ -80,54 +81,34 @@
 <nav class="crumb"><a href="index.html">Guide</a> <i>&rsaquo;</i> <a href="part-1-where-you-are.html">Part 1 &middot; Where you are</a> <i>&rsaquo;</i> <b>1.2</b></nav>
 <article class="section">
   <div class="sec-head"><span class="sn">1.2</span><h1>Finding your vegetation type</h1></div>
-  <p>How often your bush should burn, what should return on its own, and what belongs there if you ever replant all hang off one answer: which vegetation type you have. Your block is already mapped.</p>
-
+  <p>How often your bush should burn, what should return on its own, and what plants are appropriate to plant there all depend on which vegetation type you have.</p>
+      <p>Every bioregion has a list of possible vegetation types. A vegetation type is a particular community of plants that grows wherever the same conditions repeat, such as the same soil, slope, drainage and rainfall. Each one has its own recognisable mix of trees, shrubs, grasses and herbs. A single block can have several vegetation types side by side, set by changes in the landscape, such as heathy woodland on a sandy rise and herb-rich woodland down in a damp gully.</p>
+      <p>Victoria&rsquo;s official name for these vegetation types is <strong>Ecological Vegetation Class</strong>, or <strong>EVC</strong>. The state has sorted all its native bush into about 300 of these classes, each with a name and a number, such as Heathy Woodland (48) or Plains Grassy Woodland (55). It has mapped them across Victoria, both as the bush stands today and as it was before 1750. The conservation status listed for each EVC is based on how much of it has been lost since 1750.</p>
+      <p>Once you know your EVC, you can find out how it responds to fire. The state has sorted every EVC into a <strong>fire division</strong>: a group of EVCs that behave in much the same way when fire comes through. Victoria&rsquo;s 300 or so EVCs fall into 32 of these divisions.<sup class="fn"><a id="fnref-1.2-1" href="#fn-1.2-1" aria-label="Source 1">1</a></sup> Within one division, the bush recovers at about the same pace and has the same sensitive plants to protect. So instead of setting fire rules for every vegetation type, ecologists set them once for each division: how soon after one fire the next can safely come, how long the bush can go without fire, and how long it takes to grow from young regrowth to old bush.</p>
+      <p>With that knowledge, you can look up your own EVCs and fire divisions.</p>
       <div class="portal">
         <span class="lbl">In the lookup tool: section 1.2</span>
-        <p>In the <a href="block-fire-profile.html" target="_blank" rel="noopener">Wimmera Bushfire Ecology Lookup Tool</a>, section 1.2, <em>Your vegetation type</em>, lists each vegetation type mapped on your block, with its area and conservation status. The switch at the top flips between <strong>Today (2005 mapping)</strong> and <strong>Before 1750</strong>. Hover over a row to see where that vegetation sits on the map.</p>
+        <p>In the <a href="block-fire-profile.html" target="_blank" rel="noopener">Wimmera Bushfire Ecology Lookup Tool</a>, section 1.2, <em>Your vegetation type</em>, lists each vegetation type mapped on your block, with its conservation status, its fire division and its area. The two buttons at the top switch between <strong>Intact vegetation remaining today</strong> (the 2005 mapping) and <strong>Pre-1750 vegetation</strong>. Click a row to see where that vegetation sits on your block: it turns yellow on the map.</p>
       </div>
-
-      <div class="ph">
-        <span class="t">Screenshot</span>
-        <p class="d">Portal section 1.2 for the example block, on the &ldquo;Today&rdquo; view: the summary sentence and the table with Heathy Woodland, Damp Sands Herb-rich Woodland and the unmapped remainder, including the fire division column.</p>
-        <p class="s">Capture from the lookup tool on the example block near Pomonal (the block it opens on). A second shot of the &ldquo;Before 1750&rdquo; view would help too.</p>
-      </div>
-
-      <div class="case">
+      <div class="demo">
         <span class="who">Follow along &middot; the example block near Pomonal</span>
-        <p>Most of the bush on the example block is mapped as <strong>Heathy Woodland (EVC 48)</strong>, about 8 hectares or half the block. Another 3.5 hectares is <strong>Damp Sands Herb-rich Woodland (EVC 3)</strong>, and the remaining quarter or so has no native vegetation mapped: cleared ground, paddock, or patches too small to map. Both vegetation types are listed as <em>Least Concern</em> in this bioregion.</p>
-        <p>The lookup tool matches Heathy Woodland to the <strong>Grassy / Heathy Dry Forest</strong> division and Damp Sands Herb-rich Woodland to <strong>Forby Forest</strong>. Those two divisions are what section <a href="1-4-how-often-should-this-country-burn.html">1.4</a> checks the fire history against. Grassy / Heathy Dry Forest is fire-dependent: much of its regeneration is triggered by fire, and a good deal of what grows there is killed outright and comes back only from seed.</p>
+        <figure class="fig tool" id="fig-1-2-tool"><div class="fimgs n1"><div class="fi"><img class="only-light" src="img/tool-1-2-light.jpg" alt="Section 1.2 of the lookup tool for the example block: Heathy Woodland, Shrubby Woodland and Damp Sands Herb-rich Woodland, with the Heathy Woodland row clicked and its area shown in yellow on the map." loading="lazy"><img class="only-dark" src="img/tool-1-2-dark.jpg" alt="Section 1.2 of the lookup tool for the example block: Heathy Woodland, Shrubby Woodland and Damp Sands Herb-rich Woodland, with the Heathy Woodland row clicked and its area shown in yellow on the map." loading="lazy"></div></div><figcaption>Section 1.2 for the example block, with the Heathy Woodland row clicked. The yellow on the map is where it is mapped.<span class="fsrc">Wimmera Bushfire Ecology Lookup Tool &middot; example block near Pomonal &middot; October 2026</span></figcaption></figure>
+        <div class="case">
+          <p>Most of the bush on the example block is mapped as <strong>Heathy Woodland (EVC 48)</strong>, 67 hectares or about 40% of the block. Another 22 hectares is <strong>Shrubby Woodland (EVC 282)</strong> and 7 hectares <strong>Damp Sands Herb-rich Woodland (EVC 3)</strong>. All three are listed as <em>Least Concern</em> in this bioregion. The other 73 hectares, 43% of the block, has no native vegetation mapped: the cleared paddocks you can see on the aerial photo.</p>
+          <p>Switch to <em>Pre-1750 vegetation</em> and the whole block was bush: 78% Heathy Woodland, 17% Shrubby Woodland and 5% Damp Sands Herb-rich Woodland. That tells you which plants would be best suited to those areas if you revegetated (section <a href="4-9-do-i-need-to-replant.html">4.9</a>).</p>
+          <p>The lookup tool matches Heathy Woodland and Shrubby Woodland to the <strong>Grassy / Heathy Dry Forest</strong> fire division, and Damp Sands Herb-rich Woodland to <strong>Forby Forest</strong>. This is where we learn how those vegetation types respond to fire. For example, Grassy / Heathy Dry Forest is fire-dependent: much of its regeneration is triggered by fire, and a good deal of what grows there is killed outright and comes back only from seed.</p>
+        </div>
       </div>
-
-      <h4>Reading the table</h4>
-
-      <ul>
-        <li><strong>EVC</strong> &mdash; the Ecological Vegetation Class, each with a name and number: <em>Heathy Woodland (48)</em>, <em>Plains Grassy Woodland (55)</em>. This is the level you&rsquo;ll see everywhere else.</li>
-        <li><strong>Conservation status in this bioregion</strong> &mdash; how much of that vegetation type is left in your bioregion compared with before 1750, from <em>Least Concern</em> through <em>Depleted</em> and <em>Vulnerable</em> to <em>Endangered</em>. The rarer it is, the more your patch counts.</li>
-        <li><strong>Fire division</strong> &mdash; EVCs grouped by how they behave with fire. Around 300 EVCs across Victoria condense into 32 divisions, and the division is what carries the fire intervals in section <a href="1-4-how-often-should-this-country-burn.html">1.4</a>.<sup class="fn"><a id="fnref-1.2-1" href="#fn-1.2-1" aria-label="Source 1">1</a></sup><sup class="fn"><a id="fnref-1.2-2" href="#fn-1.2-2" aria-label="Source 2">2</a></sup> The lookup tool fills it in from the state mapping (<em>From state mapping</em>). You can change it, and it is marked <em>Changed by you</em> if you do, but only do that on the advice of your Landcare group or an ecologist.</li>
-        <li><strong>Area</strong> &mdash; hectares of your block, and the share. A row for unmapped ground shows how much of the block carries no mapped native vegetation.</li>
-      </ul>
-
-      <h4>Two maps, two questions</h4>
-
-      <p>The <strong>Today</strong> view shows native vegetation still standing, as mapped in 2005. The <strong>Before 1750</strong> view models what grew there before European settlement &mdash; a better guide to what the site could carry, and the right reference if you replant (section <a href="4-9-do-i-need-to-replant.html">4.9</a>).<sup class="fn"><a href="#fn-1.2-2" aria-label="Source 2">2</a></sup></p>
-
-      <p>Both are modelled at a landscape scale and can be wrong on one property. Each EVC has a published benchmark listing the species you would expect; walk your block against it. If it doesn&rsquo;t match, trust your eyes, and ask your Landcare group or a local ecologist.</p>
-
-      <figure class="fig draft" id="fig-1-2-1"><div class="fimgs n2"><div class="fi"><img src="img/readland_s08_1.jpg" alt="Pre-1750 EVCs" loading="lazy"><span class="lab">Pre-1750 EVCs</span></div><div class="fi"><img src="img/readland_s11_1.jpg" alt="Current EVCs" loading="lazy"><span class="lab">Current EVCs</span></div></div><figcaption>The same country mapped two ways: the vegetation that was there before 1750, and what remains today. Each colour is a different vegetation type.<span class="fsrc"><b>Draft image</b> &middot; Yasmin Kelsall talk; DEECA NatureKit</span></figcaption></figure>
-      <figure class="fig draft" id="fig-1-6-1"><div class="fimgs n1"><div class="fi"><img src="img/readland_s27_1.jpg" alt="Vegetation types mapped on and around the Pomonal property." loading="lazy"></div></div><figcaption>Vegetation types mapped on and around the Pomonal property.<span class="fsrc"><b>Draft image</b> &middot; Yasmin Kelsall talk. Check the landholder is happy for the property to be identifiable</span></figcaption></figure>
       <p class="srcnote"><strong>Where this comes from.</strong> DEECA&rsquo;s 2005 and pre-1750 Ecological Vegetation Class mapping, with Bioregional Conservation Status. To look at the source maps yourself, open <a href="https://naturekit.biodiversity.vic.gov.au/">NatureKit</a>, search your address, and turn on <em>2005 Ecological Vegetation Classes</em> or <em>Pre-1750 Ecological Vegetation Classes</em>.</p>
-
       <div class="needs">
         <span class="lbl">Needed</span>
-        <p>Worth stepping through NatureKit once to confirm the layer names in the note above, which come from DEECA documentation rather than the live tool. The lookup tool also tells people to walk their block against the EVC benchmark, so it needs the same correction as the passage below.</p>
-        <p>This section tells people to walk their block against the EVC benchmark. Yasmin Kelsall advised specifically against using benchmarks for species information, because they are modelled, and pointed instead to the regional EVC reports, where experts did on-ground flora assessments. Those two report titles need to come off her slides, and then this passage and 4.9 both change. Queued.</p>
+        <p>Worth stepping through NatureKit once to confirm the layer names in the note above, which come from DEECA documentation rather than the live tool.</p>
+        <p>Yasmin Kelsall pointed to the regional EVC reports, where experts did on-ground flora assessments, as the place to check what should grow in each EVC. Once those two report titles come off her slides, add them here and in 4.9.</p>
       </div>
 </article>
 <section class="sources" aria-label="Sources">
 <h4>Sources</h4>
-<ol><li id="fn-1.2-1">Cheal, D. (2010) <em>Growth Stages and Tolerable Fire Intervals for Victoria&rsquo;s Native Vegetation Data Sets</em>. Fire and Adaptive Management Report No. 84, Department of Sustainability and Environment, Victoria. <a class="srclink" href="https://www.ffm.vic.gov.au/__data/assets/pdf_file/0008/21113/Report-84-REDUCED-SIZE-Growth-Stages-and-Tolerable-Fire-Intervals-For-Victorias-Native-Vegetation-Data-Se.pdf">www.ffm.vic.gov.au</a> <a class="backref" href="#fnref-1.2-1" aria-label="Back to text">&#8617;</a></li>
-<li id="fn-1.2-2">Yasmin Kelsall, vegetation specialist, in her talk <q>Reading the vegetation</q> at the Reading the Landscape workshop, Pomonal, September 2026. <a class="backref" href="#fnref-1.2-2" aria-label="Back to text">&#8617;</a></li></ol>
+<ol><li id="fn-1.2-1">Cheal, D. (2010) <em>Growth Stages and Tolerable Fire Intervals for Victoria&rsquo;s Native Vegetation Data Sets</em>. Fire and Adaptive Management Report No. 84, Department of Sustainability and Environment, Victoria. <a class="srclink" href="https://www.ffm.vic.gov.au/__data/assets/pdf_file/0008/21113/Report-84-REDUCED-SIZE-Growth-Stages-and-Tolerable-Fire-Intervals-For-Victorias-Native-Vegetation-Data-Se.pdf">www.ffm.vic.gov.au</a> <a class="backref" href="#fnref-1.2-1" aria-label="Back to text">&#8617;</a></li></ol>
 </section>
 <nav class="pager">
 <a class="prev" href="1-1-bioregions-and-geology.html"><span>Previous</span>1.1 Bioregions and geology</a>

@@ -138,6 +138,14 @@ td select{max-width:220px;border:1px solid var(--line);border-radius:5px;backgro
 .chip.long{background:var(--long-soft);color:var(--long)}
 .chip.mute{background:var(--line);color:var(--muted)}
 .divst{margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.landcard{margin:22px 0 6px;padding:16px 18px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
+.landcard .landh{margin:0;font-family:var(--f-sub);font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.landcard p{margin:0}
+.landstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.landstats div{background:var(--surface-2);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.landstats b{font-size:22px;font-family:var(--f-sub);color:var(--ink)}
+.landstats span{font-size:13px;color:var(--muted);line-height:1.35}
+.landcard .sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px}
 .linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font-size:12px}
 
 .callout{border-left:3px solid var(--accent);padding:6px 0 6px 18px;display:flex;flex-direction:column;gap:8px}
@@ -530,6 +538,7 @@ const ctxLayer = L.geoJSON(null, {style:{color:"#C24E1C", weight:1.5, fillColor:
 const STAGE_COLORS = ["#CFE3A8", "#8CC084", "#3E8E6E", "#1F4E5A"];
 const stageLayer = L.geoJSON(null, {style:f => ({color:"#fff", weight:1, fillColor:STAGE_COLORS[f.properties.stage], fillOpacity:.6}), interactive:false});
 const hiLayer = L.geoJSON(null, {style:{color:"#FFD24A", weight:2, fillColor:"#FFD24A", fillOpacity:.35}}).addTo(map);
+const landLayer = L.layerGroup(); // 1.3 "your block in the landscape": 5 km ring and surrounding bush
 
 /* ---------- state ---------- */
 let S = null;       // current selection + fetched data
@@ -591,7 +600,7 @@ async function analyse(id){
   loadUser();
   selLayer.clearLayers().addData(S.aoi);
   selInner.clearLayers().addData(S.aoi);
-  ctxLayer.clearLayers(); stageLayer.clearLayers();
+  ctxLayer.clearLayers(); stageLayer.clearLayers(); landLayer.clearLayers(); landLayer.remove();
   hiLayer.clearLayers(); PICK = null; for(const k in OV) delete OV[k]; ovLayer.clearLayers(); clearBioZoom(false); map.setMinZoom(7); map.setMaxBounds(L.latLngBounds(WIM_BOUNDS).pad(0.25));
   map.fitBounds(selLayer.getBounds(), {maxZoom:16, padding:[30,30]});
   syncExampleBtn();
@@ -625,6 +634,7 @@ async function analyse(id){
   }
   process();
   renderAll();
+  loadLandscape(id);
   if(S.example) setBanner("example");
   else if(failed.length) setBanner("error", "Some layers didn’t load (" + failed.join(", ") + "). The sections that need them say so. Click the block again to retry.");
   else setBanner(S.bigNote ? "info" : null, S.bigNote);
@@ -990,6 +1000,7 @@ function onSecChange(){
   lastSec = sec;
   if(sec !== "s11" && BIOZOOM.name){ clearBioZoom(true); if(S) render11(); }
   if(sec !== "s13" && S && S.fireZoom != null) clearFireZoom(true);
+  if(sec !== "s13" && S && S.landShow) hideLand(true);
   paintOv(); syncStageLayer();
 }
 addEventListener("scroll", () => { if(!secTick){ secTick = true; setTimeout(onSecChange, 80); } }, {passive:true});
@@ -1046,6 +1057,7 @@ function render13(){
         <td class="n">${fmtHa(s.ha)} ha<br><span class="note">${fmtPct(s.ha/S.ha)}</span></td>
         <td>${sevSel(s.year)}<div class="note">Record: ${esc(s.sevNote)}</div></td></tr>`).join("") + `</tbody></table></div>`;
   }
+  html += `<div id="landcard" class="landcard"></div>`;
   html += `<div class="callout"><p><b>NOTE:</b> The fire record mapping shows perimeters only, not severity. The mapping may also not show smaller unburnt patches within the overall burn perimeter. Source data: <a href="https://www.ffm.vic.gov.au/history-and-incidents/past-bushfires/past-bushfire-maps" target="_blank" rel="noopener">Forest Fire Management Victoria</a>.</p></div>`;
   $("#s13 .body").innerHTML = html;
   // Click a fire row: its part of the block turns yellow (same as 1.1 and 1.2).
@@ -1054,6 +1066,7 @@ function render13(){
     hover("#s13 tr[data-fire]", el => [S.seasons[+el.dataset.fire].union],
       el => fireColour(n > 1 ? yrs.indexOf(S.seasons[+el.dataset.fire].year) / (n - 1) : 1)); }
   $("#s13 .body").querySelectorAll(".firezoom").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); toggleFireZoom(+b.dataset.fz); }));
+  renderLand();
   if(S.fireZoom != null && S.seasons[S.fireZoom]) showWholeFire(S.fireZoom, false);
   $("#s13 .body").querySelectorAll("select[data-sev]").forEach(s => s.addEventListener("change", () => { S.user.sev[s.dataset.sev] = s.value; saveUser(); refreshFire(); }));
   $("#s13 .body").querySelectorAll("[data-rm]").forEach(b => b.addEventListener("click", () => { const y = +b.dataset.rm; S.user.fires = S.user.fires.filter(f=>f.year!==y); delete S.user.sev[y]; saveUser(); render13(); refreshFire(); }));
@@ -1085,6 +1098,106 @@ function toggleFireZoom(i){
   if(S.fireZoom === i){ clearFireZoom(true); return; }
   S.fireZoom = i; showWholeFire(i, true);
   document.querySelectorAll("#s13 .firezoom").forEach(b => b.textContent = +b.dataset.fz === i ? "Back to your block" : "Show the whole fire on the map");
+}
+
+/* ---------- 1.3 Your block in the landscape ----------
+   Native bush (2005 EVC mapping) within LAND_KM of the block, and how much of it burnt in the block's
+   most recent fire season. The shapes are painted onto a hidden canvas and the pixels counted, which
+   is fast however complicated the mapping is (about 20 m per pixel at 5 km). */
+const LAND_KM = 5;
+async function loadLandscape(id){
+  if(!S || !S.aoi) return;
+  S.land = {loading:true}; renderLand();
+  try{
+    const ring = turf.buffer(S.aoi, LAND_KM, {units:"kilometers"});
+    const [a,b,c,d] = turf.bbox(ring);
+    const bb = `BBOX(geom,${a},${b},${c},${d},'EPSG:4326')`;
+    let year = (S.seasons||[]).map(x=>+x.year).sort((x,y)=>y-x)[0];
+    if(!year){
+      const yrs = await wfs("fire_history", "season", bb);
+      if(id !== runId) return;
+      year = yrs.map(f=>+f.properties.season).filter(Boolean).sort((x,y)=>y-x)[0];
+    }
+    if(!year){ S.land = {none:true}; renderLand(); return; }
+    const [veg, fires] = await Promise.all([wfs("nv2005_evcbcs", "evc,geom", bb), wfs("fire_history", "season,geom", bb + " AND season=" + year)]);
+    if(id !== runId) return;
+    const kx = Math.cos((b+d)/2*Math.PI/180), W = 600, H = Math.max(50, Math.round(W*(d-b)/((c-a)*kx)));
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const g = cv.getContext("2d", {willReadFrequently:true});
+    const sx = W/(c-a), sy = H/(d-b);
+    const paint = feats => { g.clearRect(0,0,W,H); g.fillStyle = "#000";
+      for(const ft of feats){ const gm = ft && ft.geometry; if(!gm) continue;
+        const polys = gm.type === "Polygon" ? [gm.coordinates] : gm.type === "MultiPolygon" ? gm.coordinates : [];
+        for(const poly of polys){ g.beginPath(); for(const r of poly){ for(let i=0;i<r.length;i++){ const X=(r[i][0]-a)*sx, Y=(d-r[i][1])*sy; i ? g.lineTo(X,Y) : g.moveTo(X,Y); } g.closePath(); } g.fill("evenodd"); } }
+      return g.getImageData(0,0,W,H).data; };
+    const R = paint([ring]), V = paint(veg), B = paint(fires), K = paint([S.aoi]);
+    const img = g.createImageData(W,H), px = img.data;
+    let sur=0, surB=0, blk=0, blkB=0;
+    for(let i=3;i<R.length;i+=4){
+      if(R[i] < 128 || V[i] < 128) continue;
+      const burnt = B[i] >= 128, mine = K[i] >= 128;
+      if(mine){ blk++; if(burnt) blkB++; } else { sur++; if(burnt) surB++; }
+      const [r,gg,bl] = burnt ? [194,65,12] : [15,118,110];
+      px[i-3]=r; px[i-2]=gg; px[i-1]=bl; px[i]=150;
+    }
+    g.putImageData(img,0,0);
+    const pxHa = ((c-a)*111320*kx/W) * ((d-b)*111320/H) / 1e4;
+    if(!sur){ S.land = {nobush:true, year}; renderLand(); return; }
+    S.land = {ok:true, year, ring, bounds:[[b,a],[d,c]], url:cv.toDataURL("image/png"),
+      sp: Math.round(100*surB/sur), bp: blk ? Math.round(100*blkB/blk) : null,
+      blkBush: blk*pxHa, blkUnb: (blk-blkB)*pxHa, surUnb: (sur-surB)*pxHa, surBush: sur*pxHa};
+    S.land.share = S.land.blkUnb / Math.max(1e-9, S.land.blkUnb + S.land.surUnb);
+  }catch(e){ console.error(e); if(id === runId) S.land = {error:true}; }
+  if(id === runId){ renderLand(); if(S.assessed) renderWD(); }
+}
+function landVerdict(L){
+  const sp = L.sp, bp = L.bp, y = L.year;
+  if(bp == null) return `Your block has no native vegetation mapped, but <b>${sp}% of the bush within ${LAND_KM} km</b> burnt in ${y}.`;
+  if(bp >= 50 && sp < 40) return `Your block burnt more heavily than the country around it. Only <b>${sp}% of the bush within ${LAND_KM} km</b> burnt in ${y}, so there is unburnt bush close by for plants and animals to come back from.`;
+  if(sp >= 50 && bp <= sp - 25) return `Most of the bush within ${LAND_KM} km burnt in ${y}, but much of your block didn’t. Your ${fmtHa(L.blkUnb)} ha of unburnt bush is <b>${fmtPct(L.share)} of the unburnt bush</b> within ${LAND_KM} km, so it is likely sheltering wildlife while the country around it recovers.`;
+  if(L.blkUnb + L.surUnb < 1) return `Almost all the bush within ${LAND_KM} km burnt in ${y}, <b>your block included</b>. Any unburnt patches are too small to show in the state mapping, which makes them all the more valuable.`;
+  if(sp >= 50 && bp >= 50) return `Most of the bush within ${LAND_KM} km burnt in ${y}, <b>your block included</b>. The patches that escaped, ${fmtHa(L.blkUnb)} ha on your block and ${fmtHa(L.surUnb)} ha around it, are where recovery starts from.`;
+  if(sp < 40 && bp < 40) return `Most of the bush within ${LAND_KM} km, and most of your block’s bush, <b>escaped the ${y} fire</b>.`;
+  return `Your block burnt in about the same proportion as the country around it in ${y}: <b>${bp}%</b> of your block’s bush and <b>${sp}%</b> of the bush within ${LAND_KM} km.`;
+}
+function renderLand(){
+  const box = document.getElementById("landcard"); if(!box || !S) return;
+  const L = S.land;
+  let h = `<h3 class="landh">Your block in the landscape</h3>`;
+  if(!L || L.loading) h += `<p class="note">Looking at the bush within ${LAND_KM} km of your block…</p>`;
+  else if(L.error) h += `<p class="note">Couldn’t load the surrounding vegetation and fire mapping. Click the block again to retry.</p>`;
+  else if(L.none) h += `<p>The state record shows no fires within ${LAND_KM} km of your block.</p>`;
+  else if(L.nobush) h += `<p>No native vegetation is mapped within ${LAND_KM} km of your block.</p>`;
+  else {
+    h += `<p class="answer">${landVerdict(L)}</p>
+      <div class="landstats">
+        <div><b>${L.sp}%</b><span>of the bush within ${LAND_KM} km burnt in ${L.year}</span></div>
+        ${L.bp == null ? "" : `<div><b>${L.bp}%</b><span>of your block’s bush burnt in ${L.year}</span></div>`}
+        <div><b>${fmtHa(L.blkUnb)} ha</b><span>of unburnt bush on your block, of ${fmtHa(L.blkUnb + L.surUnb)} ha within ${LAND_KM} km</span></div>
+      </div>
+      <p><button type="button" class="linkbtn" id="landbtn">${S.landShow ? "Back to your block" : `Show the ${LAND_KM} km around your block on the map`}</button></p>
+      <p class="note"><span class="sw" style="background:#0F766E"></span> unburnt bush &nbsp; <span class="sw" style="background:#C2410C"></span> bush burnt in ${L.year}. Bush is native vegetation in the state’s 2005 mapping; “burnt” means inside the ${L.year} fire boundary, so unburnt patches within it don’t show.</p>`;
+  }
+  box.innerHTML = h;
+  const btn = document.getElementById("landbtn");
+  if(btn) btn.addEventListener("click", () => { S.landShow ? hideLand(true) : showLand(); });
+}
+function showLand(){
+  const LD = S && S.land; if(!LD || !LD.ok) return;
+  if(S.fireZoom != null) clearFireZoom(false);
+  landLayer.clearLayers();
+  L.imageOverlay(LD.url, LD.bounds, {opacity:.85, interactive:false}).addTo(landLayer);
+  L.geoJSON(LD.ring, {style:{color:"#fff", weight:2, dashArray:"6 6", fill:false}, interactive:false}).addTo(landLayer);
+  landLayer.addTo(map); hiLayer.bringToFront(); selLayer.bringToFront();
+  S.landShow = true; map.setMaxBounds(null); map.setMinZoom(5);
+  try{ map.fitBounds(LD.bounds, {padding:[20,20]}); }catch(e){}
+  renderLand();
+}
+function hideLand(refit){
+  if(!S) return; S.landShow = false; landLayer.clearLayers(); landLayer.remove();
+  map.setMinZoom(7); map.setMaxBounds(L.latLngBounds(WIM_BOUNDS).pad(0.25));
+  if(refit && selLayer.getLayers().length) map.fitBounds(selLayer.getBounds(), {maxZoom:16, padding:[30,30]});
+  renderLand();
 }
 
 function timelineSVG(row, a){
@@ -1250,6 +1363,10 @@ function plantTabs(){
     tabs.push({e, when, list, scope, fallback}); };
   (S.v05||[]).forEach(e=>add(e, "today"));
   (S.v1750||[]).forEach(e=>add(e, "before 1750"));
+  // "All together": the plants of every vegetation type on the block today (or before 1750 if none is mapped today)
+  let parts = tabs.filter(t => t.list && t.when === "today");
+  if(!parts.length) parts = tabs.filter(t => t.list);
+  if(parts.length >= 2) tabs.unshift({all:true, parts, when:parts[0].when, e:{name:"All together", pieces:parts.flatMap(t => t.e.pieces || [])}});
   return tabs;
 }
 // Most recent fire over any part of this vegetation type on the block.
@@ -1266,40 +1383,45 @@ function matRange(m){
 /* Plants killed by fire that a landholder should look for first:
    A) the latest fire came before they could have set seed from the previous one (short gap), and
    B) the rest of the killed-by-fire plants, with the year each needs to stay fire-free until. */
-function seederFeature(name, rows, lastFire){
-  if(!lastFire) return "";
-  const seeders = rows.map(s => Object.assign(s, {mr:matRange(s.mat)})).filter(s => s.resp[0] === "K" && s.mr);
-  if(!seeders.length) return "";
-  // the tightest recent pair of fires on any part of this vegetation on the block
+// the tightest recent pair of fires on any part of the given vegetation types on the block
+function firePair(names){
   let pair = null;
-  for(const r of (S.ovRows||[])) if(r.evcs.has(name) && r.years.length >= 2){
+  for(const r of (S.ovRows||[])) if([...names].some(n => r.evcs.has(n)) && r.years.length >= 2){
     const ys = r.years, P = ys[ys.length-2], Lf = ys[ys.length-1], gap = Lf - P;
     if(!pair || gap < pair.gap || (gap === pair.gap && Lf > pair.L)) pair = {P, L:Lf, gap, ha:0};
     if(pair && pair.P === P && pair.L === Lf) pair.ha += r.ha;
   }
-  const seedRank = s => s.seed === "C" ? 0 : s.seed === "S" ? 1 : 2;
+  return pair;
+}
+const seedRank = s => s.seed === "C" ? 0 : s.seed === "S" ? 1 : 2;
+function seederFeature(name, rows, lastFire, pairIn){
+  if(!lastFire) return "";
+  const seeders = rows.map(s => Object.assign(s, {mr:matRange(s.mat)})).filter(s => s.resp[0] === "K" && s.mr);
+  if(!seeders.length) return "";
+  const pair = pairIn !== undefined ? pairIn : firePair([name]);
   let html = "";
   const inA = new Set();
   if(pair){
-    const A = seeders.filter(s => pair.gap < s.mr.hi)
+    const A = seeders.filter(s => pair.gap < s.mr.hi && (!s.pairOK || s.pairOK(pair)))
       .sort((a,b) => (pair.gap >= a.mr.lo) - (pair.gap >= b.mr.lo) || seedRank(a) - seedRank(b) || b.freq - a.freq);
     A.forEach(s => inA.add(s.id));
     if(A.length){
       html += `<div class="featured survey"><h3 class="subhead">Survey for these first</h3>
-        <p>Part of this vegetation on your block (${fmtHa(pair.ha)} ha) burnt in ${pair.P} and again in ${pair.L}, only ${pair.gap} year${pair.gap===1?"":"s"} apart. These plants are killed by fire and come back only from seed, and may not have been old enough to set seed before the ${pair.L} fire. If they’re scarce or missing there now, that short gap is the likely reason. Look for seedlings, and note where you do and don’t find them.</p>
+        <p>Part of ${name === "All together" ? "the bush" : "this vegetation"} on your block (${fmtHa(pair.ha)} ha) burnt in ${pair.P} and again in ${pair.L}, only ${pair.gap} year${pair.gap===1?"":"s"} apart. These plants are killed by fire and come back only from seed, and may not have been old enough to set seed before the ${pair.L} fire. If they’re scarce or missing there now, that short gap is the likely reason. Look for seedlings, and note where you do and don’t find them.</p>
         <p class="note">Plants that hold their seed on the plant (like banksias and hakeas) are most at risk, because a second fire burns the seed before it drops. Plants with a soil seed bank may still have older seed in the ground.</p>
-        <div class="spgrid">${A.map(s => spCard(s, lastFire, pair.gap < s.mr.lo
+        <div class="spgrid">${A.map(s => spCard(s, s.lastFire || lastFire, pair.gap < s.mr.lo
           ? `<span class="chip bad" title="Years from germination to first seed: ${esc(s.mat)}">Probably hadn’t seeded before ${pair.L}</span>`
           : `<span class="chip warn" title="Years from germination to first seed: ${esc(s.mat)}">May not have seeded before ${pair.L}</span>`)).join("")}</div></div>`;
     }
   }
-  const B = seeders.filter(s => !inA.has(s.id)).map(s => Object.assign(s, {until: lastFire + (isFinite(s.mr.hi) ? s.mr.hi : s.mr.lo)}))
+  const B = seeders.filter(s => !inA.has(s.id)).map(s => Object.assign(s, {until: (s.lastFire || lastFire) + (isFinite(s.mr.hi) ? s.mr.hi : s.mr.lo)}))
     .filter(s => s.until > NOW).sort((a,b) => b.until - a.until || b.freq - a.freq);
   if(B.length){
     const latest = B[0].until;
     html += `<div class="featured wait"><h3 class="subhead">Should be fine if fire stays out until ${latest}</h3>
-      <p>These plants are also killed by fire and are still growing back from the ${lastFire} fire. Each one needs to reach seeding age before this vegetation burns again. The year on each card is when the slowest of them should be seeding.</p>
-      <div class="spgrid">${B.map(s => spCard(s, lastFire, `<span class="chip warn" title="Years from germination to first seed: ${esc(s.mat)}">Needs no fire before ${s.until}</span>`)).join("")}</div></div>`;
+      <p>These plants are also killed by fire and are still growing back from the ${lastFire} fire. Each one needs to reach seeding age before ${name === "All together" ? "its vegetation" : "this vegetation"} burns again. The year on each card is when the slowest of them should be seeding.</p>
+      <p class="note"><b>That assumes the seedlings get the chance to grow.</b> Weeds that smother them, or rabbits, deer and other grazers that eat them, can wipe out a cohort of seedlings just as surely as a fire that comes too soon. Keeping weeds and grazing pressure down over the next few years is what makes this date hold (guide Part 4).</p>
+      <div class="spgrid">${B.map(s => spCard(s, s.lastFire || lastFire, `<span class="chip warn" title="Years from germination to first seed: ${esc(s.mat)}">Needs no fire before ${s.until}</span>`)).join("")}</div></div>`;
   }
   return html;
 }
@@ -1324,7 +1446,7 @@ function spCard(s, lastFire, extra){
   return `<div class="spcard"><div class="spimg" ${s.inat?`data-inat="${s.inat}"`:""} aria-hidden="true">${esc(s.sci[0])}</div>
     <div class="spbody"><div class="sci"><a href="${href}" target="_blank" rel="noopener">${esc(s.sci)}</a></div>
       ${s.com?`<div class="com">${esc(s.com)}</div>`:""}
-      <div class="freq" title="Share of survey plots in this vegetation type where it was recorded"><span><i style="width:${Math.max(3,s.freq)}%"></i></span>${s.freq}% of plots · ${esc(s.lfn.toLowerCase() || LF_NAMES[s.lf])}</div>
+      <div class="freq" title="${s.types ? `Recorded in ${esc(s.types.join(", "))}. The figure is the highest share of survey plots in any of them.` : "Share of survey plots in this vegetation type where it was recorded"}"><span><i style="width:${Math.max(3,s.freq)}%"></i></span>${s.types ? "up to " : ""}${s.freq}% of plots · ${esc(s.lfn.toLowerCase() || LF_NAMES[s.lf])}</div>
       ${chips.length?`<div class="spchips">${chips.join("")}</div>`:""}</div></div>`;
 }
 
@@ -1337,7 +1459,8 @@ function renderSpecies(){
   if(SPUI.tab >= tabs.length) SPUI.tab = 0;
   const t = tabs[SPUI.tab];
   S.spPieces = t.e.pieces; syncSpMap();
-  let html = `<div class="tabs" role="tablist">${tabs.map((x,i)=>`<button type="button" role="tab" aria-selected="${i===SPUI.tab}" data-tab="${i}">${esc(x.e.name)} <span style="opacity:.75">· ${x.when}</span></button>`).join("")}</div>`;
+  let html = `<div class="tabs" role="tablist">${tabs.map((x,i)=>`<button type="button" role="tab" aria-selected="${i===SPUI.tab}" data-tab="${i}">${x.all ? "<b>All together</b>" : esc(x.e.name)} <span style="opacity:.75">· ${x.all ? `${x.parts.length} types ${x.when}` : x.when}</span></button>`).join("")}</div>`;
+  if(t.all){ renderAllPlants(box, html, t, tabs); return; }
   if(!t.list){
     html += `<p class="answer">There aren’t enough survey plots of ${esc(t.e.name)} in western Victoria to build a list.</p><p class="note">Ask your Landcare group or a local ecologist which plants to expect in this vegetation type.</p>`;
     box.innerHTML = html; bindSpeciesUI(tabs); return;
@@ -1364,6 +1487,44 @@ function renderSpecies(){
   bindSpeciesUI(tabs);
   box.querySelectorAll(".spimg[data-inat]").forEach(el => inatObserver.observe(el));
 }
+// "All together" tab: every plant listed for the block's vegetation types, merged.
+function renderAllPlants(box, html, t, tabs){
+  const byId = new Map(), names = t.parts.map(p => p.e.name);
+  t.parts.forEach(p => {
+    const lf = lastFireFor(p.e.name);
+    p.list.s.forEach(([id,freq]) => {
+      const r = byId.get(id) || Object.assign(spRow(id)||{}, {freq:0, types:[], lastFire:null, pairs:[]});
+      if(!r.sci) return;
+      r.freq = Math.max(r.freq, freq); r.types.push(p.e.name);
+      if(lf) r.lastFire = Math.max(r.lastFire||0, lf);
+      byId.set(id, r);
+    });
+  });
+  // A plant only counts as caught by the short gap if it grows in vegetation that had that gap.
+  const pairTypes = pair => new Set(names.filter(n => { const pp = firePair([n]); return pp && pp.P === pair.P && pp.L === pair.L; }));
+  let rows = [...byId.values()].sort((a,b) => b.freq - a.freq);
+  const pair = firePair(names);
+  if(pair){ const okTypes = pairTypes(pair); rows.forEach(r => { r.pairOK = () => r.types.some(n => okTypes.has(n)); }); }
+  const lastFire = Math.max(0, ...rows.map(r => r.lastFire||0)) || null;
+  const total = rows.length, nResp = rows.filter(s=>s.resp[0]==="R").length, nKill = rows.filter(s=>s.resp[0]==="K").length;
+  const list = names.length > 1 ? names.slice(0,-1).join(", ") + " and " + names[names.length-1] : names[0];
+  html += `<p class="answer">${total} native plants turn up regularly in your block’s combination of vegetation types. Of those with fire data, <b>${nResp} resprout</b> and <b>${nKill} are killed by fire</b> and return from seed.</p>`;
+  html += `<p class="note">Combined from the plant lists for ${esc(list)}${t.when === "before 1750" ? " (as mapped before 1750)" : ""}. The percentage on each card is the highest share of survey plots in any of them; the tabs for each vegetation type have the details.</p>`;
+  html += seederFeature("All together", rows, lastFire, pair);
+  const lfs = [...new Set(rows.map(s=>s.lf))];
+  html += `<h3 class="subhead">All plants recorded in your block’s vegetation types</h3>`;
+  html += `<div class="filters"><label>Show <select id="splf"><option value="">All plant types</option>${Object.entries(LF_NAMES).filter(([k])=>lfs.includes(k)).map(([k,v])=>`<option value="${k}"${SPUI.lf===k?" selected":""}>${v}</option>`).join("")}</select></label>
+    <label>Fire response <select id="spresp"><option value="">Any</option><option value="R"${SPUI.resp==="R"?" selected":""}>Resprouts</option><option value="K"${SPUI.resp==="K"?" selected":""}>Killed by fire, regrows from seed</option><option value="?"${SPUI.resp==="?"?" selected":""}>No fire data</option></select></label></div>`;
+  if(SPUI.lf) rows = rows.filter(s=>s.lf===SPUI.lf);
+  if(SPUI.resp) rows = rows.filter(s=> SPUI.resp==="?" ? !s.resp : s.resp[0]===SPUI.resp);
+  const shown = SPUI.all ? rows : rows.slice(0, 24);
+  html += shown.length ? `<div class="spgrid">${shown.map(s=>spCard(s, s.lastFire)).join("")}</div>` : `<p class="note">No plants match these filters.</p>`;
+  if(rows.length > shown.length) html += `<div class="row"><button class="btn" type="button" id="spmore">Show all ${rows.length}</button></div>`;
+  html += `<p class="note">Photos from iNaturalist, credited on each image. Fire traits from AusTraits (mainly DEECA’s Vital Attributes and Cheal 2017). Check any ID against <a href="https://vicflora.rbg.vic.gov.au" target="_blank" rel="noopener">VicFlora</a>.</p>`;
+  box.innerHTML = html;
+  bindSpeciesUI(tabs);
+  box.querySelectorAll(".spimg[data-inat]").forEach(el => inatObserver.observe(el));
+}
 /* ---------- Part 1 / Part 2 ---------- */
 const curPart = () => document.body.dataset.part || "1";
 function syncSpMap(){
@@ -1376,7 +1537,7 @@ function setPart(n, scroll){
   document.querySelectorAll(".parttabs [data-part]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.part === n)));
   store("bfp:part", n);
   clearPick(); ovLayer.clearLayers(); hiLayer.clearLayers();
-  if(n !== "1"){ if(BIOZOOM.name) clearBioZoom(true); if(S && S.fireZoom != null) clearFireZoom(true); }
+  if(n !== "1"){ if(BIOZOOM.name) clearBioZoom(true); if(S && S.fireZoom != null) clearFireZoom(true); if(S && S.landShow) hideLand(true); }
   if(scroll){ const t = document.querySelector(".parttabs"); const y = t.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tb")) || 64) - 4; if(scrollY > y) scrollTo({top:y}); }
   lastSec = null; onSecChange(); syncSpMap();
 }
@@ -1440,6 +1601,7 @@ function writeDownText(){
   (S.seasons||[]).slice().reverse().forEach(s=>L.push(`    ${s.year}: ${s.events.map(e=>e.label+" ["+e.type+"]").join("; ")} - ${fmtHa(s.ha)} ha of block (${fmtPct(s.ha/S.ha)}), severity: ${sevOf(s.year)}`));
   if(S.seasons && !S.seasons.length) L.push(`    none recorded`);
   S.user.fires.slice().sort((a,b)=>a.year-b.year).forEach(f=>L.push(`    ${f.year}: added from local knowledge${f.note?` (${f.note})`:""}, severity: ${sevOf(f.year)}`));
+  if(S.land && S.land.ok) L.push(`    In the landscape (5 km): ${S.land.sp}% of the bush within ${LAND_KM} km burnt in ${S.land.year}${S.land.blkBush ? `; ${S.land.bp}% of your block's bush` : ""}. Unburnt bush: ${fmtHa(S.land.blkUnb)} ha on your block, ${fmtHa(S.land.surUnb)} ha around it.`);
   L.push("");
   L.push(`1.4 FIRE INTERVAL CHECK:`);
   (S.assessed||[]).forEach(({row,a})=>{ const d = DIVS[row.div];

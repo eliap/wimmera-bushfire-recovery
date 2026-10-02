@@ -15,7 +15,7 @@
   ];
   var SEL = '.section > p, .section > h4, .section > ul > li, .section > ol > li, ' +
             '.section > .protocol, .section > .case, .section > .wefound, .section > .rule, ' +
-            '.section > .needs, .section > .ph, .section > .scroller, .section .sec-head h1, .parthead .lede';
+            '.section > .needs, .section > .ph, .section > .scroller, .section > .demo > .case, .section .sec-head h1, .parthead .lede';
 
   var data = window.GStore.get(sec);
   var blocks = [], byKey = {};

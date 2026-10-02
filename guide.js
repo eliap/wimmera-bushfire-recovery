@@ -90,6 +90,8 @@
   Array.prototype.forEach.call(document.querySelectorAll('figure.fig.slides'), function(fig){
     var items = fig.querySelectorAll('.fi');
     if (items.length < 2) return;
+    /* load every image up front so clicking through doesn't wait on the next one */
+    Array.prototype.forEach.call(fig.querySelectorAll('img'), function(im){ im.loading = 'eager'; var pre = new Image(); pre.src = im.currentSrc || im.src; });
     var i = 0, nav = document.createElement('div');
     nav.className = 'slidenav';
     var prev = document.createElement('button'); prev.type = 'button'; prev.className = 'step'; prev.textContent = '‹'; prev.setAttribute('aria-label', 'Previous image');

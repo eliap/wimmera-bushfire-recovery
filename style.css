@@ -1,7 +1,7 @@
 
   /* Colours: Project Platypus palette (Tailwind teal / slate). Fonts: Amatic SC titles, Lato subtitles, Open Sans text. */
   :root{
-    color-scheme:light;
+    color-scheme:only light; /* opt out of Chrome auto-dark; the guide has its own dark mode */
     --paper:#FFFFFF;
     --surface:#FFFFFF;
     --surface-2:#F1F5F9;   /* slate-100 */
@@ -506,3 +506,16 @@ ol.cards b,.pager a,.cta,.portal .portalgo a{font-family:var(--f-sub);font-weigh
 .themebtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex:none}
 .themebtn[aria-pressed="true"]{background:transparent;border-color:var(--rule);color:var(--ink-2)}
 @media print{.themebtn{display:none !important}}
+
+.fig.tool img{border:1px solid var(--rule-soft);border-radius:4px}
+.fig.tool{max-width:min(100%,64rem)}
+
+/* Follow-along boxes: the lookup tool screenshots and the worked example sit together in one tinted panel */
+.case{background:var(--surface-2);border:1px solid var(--rule-soft);border-left:4px solid var(--accent);border-top-width:1px;border-radius:6px}
+.demo{background:var(--surface-2);border:1px solid var(--rule-soft);border-left:4px solid var(--accent);border-radius:6px;padding:1.1rem 1.25rem 1.2rem;margin:1.8rem 0;max-width:min(100%,64rem)}
+.demo > .who{font-family:var(--f-sub);font-size:.68rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:.7rem}
+.demo .fig{margin:.6rem 0 1rem;max-width:none}
+.demo .fig figcaption{max-width:64ch}
+.demo .case{background:transparent;border:0;border-radius:0;padding:0;margin:.4rem 0 0;max-width:64ch}
+.demo .case h4{margin-top:.2rem}
+@media print{.demo{break-inside:auto}}
