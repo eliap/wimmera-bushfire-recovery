@@ -141,9 +141,10 @@ td select{max-width:220px;border:1px solid var(--line);border-radius:5px;backgro
 .landcard{margin:22px 0 6px;padding:16px 18px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
 .landcard .landh{margin:0;font-family:var(--f-sub);font-size:15px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .landcard p{margin:0}
-.landstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.landstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
 .landstats div{background:var(--surface-2);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
 .landstats b{font-size:22px;font-family:var(--f-sub);color:var(--ink)}
+.landstats b.sub{font-size:16px;color:var(--ink-2);margin-top:4px}
 .landstats span{font-size:13px;color:var(--muted);line-height:1.35}
 .landcard .sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px}
 .linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font-size:12px}
@@ -323,7 +324,7 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
     <div class="prophead" id="prophead"></div>
     <nav class="parttabs" role="tablist" aria-label="Guide part">
       <button type="button" role="tab" data-part="1" aria-selected="true"><span>Part 1</span> Where you are</button>
-      <button type="button" role="tab" data-part="2" aria-selected="false"><span>Part 2</span> What happens next</button>
+      <button type="button" role="tab" data-part="2" aria-selected="false"><span>Part 2</span> What to look out for</button>
       <button type="button" class="printbtn" id="printbtn" disabled title="A summary of this block to print, or save as a PDF to send to your Landcare group"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print report</button>
     </nav>
 
@@ -353,14 +354,14 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
     </section>
 
     <section class="sec" id="ssp" data-part="2">
-      <div class="sechead"><span class="sn">2.2</span><h2>Plants that belong in your bush</h2></div>
-      <p class="q">Native plants recorded in survey plots of the same vegetation type across your bioregion, with how each one handles fire. Use it to know what should come back (Part 2), what to look for (Part 3), and what to plant if something doesn’t return (4.9).</p>
+      <div class="sechead"><span class="sn">2.2</span><h2>Plants sensitive to fire</h2></div>
+      <p class="q">Native plants recorded in survey plots of your vegetation types that are killed by fire and haven’t yet reached seeding age since the last fire.</p>
       <div class="body"></div>
     </section>
 
     <div class="sources">
       <b style="color:var(--ink)">Where this comes from</b>
-      <p>Every figure is fetched live from the Victorian Government’s open spatial data service (<code>opendata.maps.vic.gov.au</code>), which carries DEECA’s datasets. Tolerable fire intervals and growth stages come from Cheal (2010), the source of DEECA’s tolerable fire interval and growth stage tables; for the vegetation types in the guide’s Part 1 tables they are the same figures. Each EVC is matched to one of DEECA’s Ecological Fire Groups by its EVC number. Those matches are being checked by an ecologist.</p>
+      <p>Every figure is fetched live from the Victorian Government’s open spatial data service (<code>opendata.maps.vic.gov.au</code>), which carries DEECA’s datasets. Tolerable fire intervals and growth stages come from Cheal (2010), the source of DEECA’s tolerable fire interval and growth stage tables; for the vegetation types in the guide’s Part 1 tables they are the same figures. Each EVC is matched to one of DEECA’s Ecological Fire Groups by its EVC number, following Cheal (2010).</p>
       <ul>
         <li>Bioregions: Victorian Bioregions (VBIOREG100)</li>
         <li>Geology: Seamless Geology 1:250,000 (GEOL250)</li>
@@ -1229,23 +1230,38 @@ async function loadLandscape(id){
     const blkOld = (blkCnt[2] + blkCnt[3]) * pxHa;
     S.land = {ok:true, year, ring, bounds:[[b,a],[d,c]], url:cv.toDataURL("image/png"), pxHa,
       share: cnt.map(n => n / sur), surHa: sur*pxHa, blkHa: blk*pxHa, blkOld, noRec: noRec / sur, near,
+      blkShare: blk ? blkCnt.map(n => n / blk) : null, surOldHa: (cnt[2] + cnt[3]) * pxHa,
       sp: year ? Math.round(100*surB/sur) : null, bp: year && blk ? Math.round(100*blkB/blk) : null};
   }catch(e){ console.error(e); if(id === runId) S.land = {error:true}; }
   if(id === runId) renderLand();
 }
 const fmtDist = m => m < 950 ? `${Math.max(50, Math.round(m/50)*50)} m` : `${(m/1000).toFixed(1)} km`;
-// The takeaway: where recovery on the block can come from.
+// Growth stage shares of the block's own bush: from 2.1's staged areas, so the card agrees with the section above it
+// (falls back to the landscape canvas count). null when the block has no staged bush.
+function blockStageShare(L){
+  const st = S.staged || [], tot = st.reduce((t,x) => t + x.row.ha, 0);
+  if(tot > 0.05){ const sh = [0,0,0,0]; st.forEach(x => sh[x.a.stage] += x.row.ha / tot); return {share:sh, ha:tot}; }
+  if(!L.blkShare) return null;
+  const t4 = L.blkShare.slice(0,4).reduce((x,y) => x + y, 0);
+  return t4 > 0 ? {share:L.blkShare.slice(0,4).map(x => x / t4), ha:L.blkHa * t4} : null;
+}
+// The facts that matter for this block, depending on how its bush compares with the bush within LAND_KM.
 function landVerdict(L){
-  const young = L.share[0] + L.share[1], older = L.share[2] + L.share[3], nr = L.near;
-  const mix = `Within ${LAND_KM} km, <b>${fmtPct(young)}</b> of the bush is juvenile or young and <b>${fmtPct(older)}</b> is mature or old.`;
-  if(nr && nr.dist < 60) return {lead:`${mix} There’s <b>mature or older bush right next to your block</b>, in a patch of ${fmtHa(nr.ha)} ha.`,
-    tip:`That patch is the nearest source of animals and seed for your block. Keeping fire, weeds and grazing out of it, and keeping the bush between it and your block connected, helps your block recover.`};
-  if(nr && nr.dist < 1000) return {lead:`${mix} The nearest patch of mature or older bush is <b>${fmtDist(nr.dist)} to the ${nr.dir}</b> (${fmtHa(nr.ha)} ha).`,
-    tip:`That’s close. Birds, flying insects and wind-blown seed can move between it and your block easily, and it’s the most likely source for plants and animals that didn’t survive on your block. Keep the bush between them connected, and fire, weeds and grazing out of that patch.`};
-  if(nr) return {lead:`${mix} The nearest patch of mature or older bush is <b>${fmtDist(nr.dist)} to the ${nr.dir}</b> (${fmtHa(nr.ha)} ha).`,
-    tip:`Birds can cover that distance, but animals that move on the ground, and plants with heavy seed, may take many years to get back. Whatever survived on your block matters more: protect it from weeds and grazing (Part 4), and look at nest boxes (4.6, 4.7) and planting (4.9) for what’s missing.`};
-  return {lead:`${mix} There’s <b>no patch of mature or older bush of ${LAND_PATCH_HA} ha or more within ${LAND_KM} km</b>.`,
-    tip:`Recovery here depends on what survived on your block and on nearby blocks. Any older or unburnt patch is especially valuable: protect it from fire, weeds and grazing (Part 4), and look at nest boxes (4.6, 4.7) and planting (4.9) for what’s missing.`};
+  const so = L.share[2] + L.share[3], nr = L.near, bs = blockStageShare(L);
+  const patch = !nr ? `There’s <b>no patch of mature or older bush of ${LAND_PATCH_HA} ha or more</b> within ${LAND_KM} km.`
+    : nr.dist < 60 ? `A <b>${fmtHa(nr.ha)} ha patch</b> of mature or older bush adjoins your block.`
+    : `The nearest patch of mature or older bush is <b>${fmtDist(nr.dist)} to the ${nr.dir}</b> (${fmtHa(nr.ha)} ha).`;
+  if(!bs) return {lead:`Within ${LAND_KM} km, <b>${fmtPct(so)}</b> of the bush is mature or older. ${patch}`};
+  const bo = bs.share[2] + bs.share[3], by = bs.share[0] + bs.share[1], boHa = bo * bs.ha;
+  const cmp = `<b>${fmtPct(bo)}</b> of your block’s bush is mature or older, compared with <b>${fmtPct(so)}</b> within ${LAND_KM} km.`;
+  const hold = boHa / Math.max(1e-9, boHa + (L.surOldHa || 0));
+  if(bo >= 0.5 && bo - so >= 0.15) return {kind:"refuge",
+    lead:`${cmp}${hold >= 0.05 ? ` Your block has <b>${fmtPct(hold)}</b> of the mature or older bush within ${LAND_KM} km.` : ""}`};
+  if(bo >= 0.5 && so >= 0.5) return {kind:"older", lead:cmp};
+  if(bo >= 0.15) return {kind:"mix",
+    lead:`${cmp} ${fmtHa(boHa)} ha of your block is mature or older and <b>${fmtPct(by)}</b> is juvenile or young. ${patch}`};
+  if(!nr || nr.dist >= 1000) return {kind:"none", lead:`<b>${fmtPct(by)}</b> of your block’s bush is juvenile or young.${nr ? ` Within ${LAND_KM} km, <b>${fmtPct(so)}</b> is mature or older.` : ""} ${patch}`};
+  return {kind:"young", lead:`<b>${fmtPct(by)}</b> of your block’s bush is juvenile or young. Within ${LAND_KM} km, <b>${fmtPct(so)}</b> is mature or older. ${patch}`};
 }
 function renderLand(){
   if(!S) return;
@@ -1262,10 +1278,10 @@ function renderLand(){
   else if(L.nobush) h += `<p>No native vegetation is mapped within ${LAND_KM} km of your block.</p>`;
   else {
     const v = landVerdict(L);
-    h += `<p>Plants and animals come back to a burnt block from older bush nearby. This is the growth stage of the native bush within ${LAND_KM} km.</p>
-      <p class="answer">${v.lead}</p><p>${v.tip}</p>
-      <div class="landstats">${STAGE_NAMES.map((n,i) => `<div><b>${fmtPct(L.share[i])}</b><span><span class="sw" style="background:${STAGE_COLORS[i]}"></span> ${n.toLowerCase()}</span></div>`).join("")}
-        ${L.blkOld >= 0.5 ? `<div><b>${fmtHa(L.blkOld)} ha</b><span>of mature or older bush on your block</span></div>` : ""}</div>
+    const bs = blockStageShare(L);
+    h += `<p>Growth stage of your block’s bush compared with the native bush within ${LAND_KM} km.</p>
+      <p class="answer">${v.lead}</p>
+      <div class="landstats">${STAGE_NAMES.map((n,i) => `<div><span><span class="sw" style="background:${STAGE_COLORS[i]}"></span> ${n}</span>${bs ? `<b>${fmtPct(bs.share[i])}</b><span>of your block</span>` : ""}<b${bs ? ` class="sub"` : ""}>${fmtPct(L.share[i])}</b><span>within ${LAND_KM} km</span></div>`).join("")}</div>
       <p><button type="button" class="linkbtn" id="landbtn">${S.landShow ? "Back to your block" : `Show the ${LAND_KM} km around your block on the map${L.near && L.near.dist >= 60 ? ", with the nearest older patch marked" : ""}`}</button></p>
       <p class="note">${L.share[4] >= 0.01 ? `<span class="sw" style="background:#94A3B8"></span> ${fmtPct(L.share[4])} of the bush has no growth stage ages (open water, wetlands Cheal doesn’t stage, or no fire group). ` : ""}Each area’s stage comes from its fire group and its last recorded fire.${L.noRec >= 0.01 ? ` ${fmtPct(L.noRec)} of the bush has no recorded fire since ${RECORD_START}, so it’s at least ${NOW - RECORD_START} years old and may be older than shown.` : ""} A “patch” is at least ${LAND_PATCH_HA} ha of mature or older bush. Bush is native vegetation in the state’s 2005 mapping, and fire boundaries don’t show unburnt patches inside them.</p>`;
   }
@@ -1339,7 +1355,6 @@ function timelineSVG(row, a){
   return s + `</svg>`;
 }
 
-let SHOW_ALL_DIVS = false;
 function render14(){
   const ov = overlayRows();
   if(!ov){ return sectionError("#s14", "fire frequency"); }
@@ -1364,15 +1379,14 @@ function render14(){
   let html = `<p class="answer">${lead}</p>`;
   if(ov.usingPre) html += `<p class="note">No 2005 vegetation is mapped here, so this uses the pre-1750 vegetation type.</p>`;
   html += `<h3 class="subhead">${S.assessed.length ? "Tolerable fire intervals for your vegetation" : "Tolerable fire intervals by fire group"}</h3>`;
-  const mine = new Set(S.assessed.map(x=>x.row.div)); const showAll = SHOW_ALL_DIVS || !mine.size;
+  const mine = new Set(S.assessed.map(x=>x.row.div)); const showAll = !mine.size;
   html += `<div class="scroller"><table><thead><tr><th>Fire group</th><th class="n">Min after high severity</th><th class="n">Min after patchy fire</th><th class="n">Max</th></tr></thead><tbody>` +
     [...new Set(Object.values(DIVS).map(d => d.cat))].map(cat => {
       const rows = Object.entries(DIVS).filter(([id,d]) => d.cat === cat && (showAll || mine.has(id)));
       if(!rows.length) return "";
       return (showAll ? `<tr><th colspan="4">${esc(cat)}</th></tr>` : "") + rows.map(([id,d])=>`<tr${showAll && mine.has(id)?` style="font-weight:600"`:""}><td>${esc(d.name)}${d.guide?` <span class="note">(guide 1.4: ${esc(d.guide)})</span>`:""}${d.note && mine.has(id)?`<br><span class="note">${esc(d.note)}</span>`:""}</td><td class="n">${d.minHigh}</td><td class="n">${d.minPatchy}</td><td class="n">${d.max ?? `<span class="note">none set</span>`}</td></tr>`).join("");
     }).join("") + `</tbody></table></div>`;
-  html += `<p class="row"><button type="button" class="linkbtn" id="showalldivs">${showAll && mine.size ? "Show only your vegetation’s fire groups" : mine.size ? `Show all ${Object.keys(DIVS).length} fire groups` : ""}</button></p>`;
-  html += `<p class="note">Intervals from Cheal (2010), the source of DEECA’s tolerable fire interval tables. Fire groups are DEECA’s Ecological Fire Groups. Each EVC’s fire group is matched by its EVC number and is still being checked by an ecologist.</p>`;
+  html += `<p class="note">Intervals from Cheal (2010), the source of DEECA’s tolerable fire interval tables. Fire groups are DEECA’s Ecological Fire Groups. Each EVC’s fire group is matched by its EVC number, following Cheal (2010).</p>`;
   if(S.tlRows.length) html += `<h3 class="subhead">Fire timeline for each fire group on your block</h3>`;
   html += `<div class="legend stack"><span><i style="background:var(--long)"></i>Longer than may be tolerated by sensitive plants</span><span><i style="background:var(--accent)"></i>Within tolerable fire interval</span><span><i style="background:var(--ochre)"></i>Within tolerable fire interval, if earlier fire was patchy</span><span><i style="background:var(--ember)"></i>Shorter than may be tolerated by sensitive plants</span><span><i style="background:repeating-linear-gradient(45deg,var(--ember-soft) 0 3px,var(--ember) 3px 4px)"></i>Sensitive plants may not tolerate a future fire within this interval</span>${noDiv.length ? `<span><i style="background:var(--muted)"></i>Fire history only: no fire interval set for this vegetation</span>` : ""}</div>`;
   html += `<p class="note">The map shades each part of your block in the colour of its most pressing status (a fire gap that was too short first, then one that depends on severity, then too long without fire, then still recovering). The square beside each timeline matches.</p>`;
@@ -1420,7 +1434,6 @@ function render14(){
     html += fold("none", `${plural(S.unassessed.length, "area")} with no fire interval set (${fmtHa(ha)} ha)`, S.unassessed.map(({row, a}, j) => tlUnassessed(row, a, S.assessed.length + j)).join("")); }
   if(noDiv.length) html += `<p class="note">Grey timelines show only the fire history of ${[...new Set(noDiv.flatMap(r=>[...r.evcs]))].length>1?"vegetation types":"a vegetation type"} with no fire group (open water, or no match). Choose a fire group in 1.2 if your Landcare group can advise one.</p>`;
   $("#s14 .body").innerHTML = html;
-  const sab = $("#showalldivs"); if(sab){ if(!sab.textContent) sab.parentNode.remove(); else sab.addEventListener("click", () => { SHOW_ALL_DIVS = !SHOW_ALL_DIVS; render14(); }); }
   hover("#s14 .tlrow", el => S.tlRows[+el.dataset.row].row.pieces, el => STATUS_COL[statusOf(S.tlRows[+el.dataset.row].a)]);
   $("#s14 .body").querySelectorAll("[data-tlfold]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.tlfold, box = b.nextElementSibling;
     if(S.tlOpen.has(k)) S.tlOpen.delete(k); else S.tlOpen.add(k);
@@ -1451,7 +1464,8 @@ function render15(){
   if(staged.length){
     const counts = [0,0,0,0]; staged.forEach(x=>counts[x.a.stage]+=x.row.ha);
     const main = counts.indexOf(Math.max(...counts));
-    html += `<p class="answer">Most of your mapped bush is at the <b>${STAGE_NAMES[main].toLowerCase()}</b> growth stage.</p>`;
+    const tot = counts.reduce((x,y) => x + y, 0);
+    html += `<p class="answer">Most of your mapped bush (<b>${fmtPct(counts[main] / tot)}</b>) is at the <b>${STAGE_NAMES[main].toLowerCase()}</b> growth stage.</p>`;
     html += `<div class="stlegend">${STAGE_NAMES.map((n,i)=>`<span><i style="background:${STAGE_COLORS[i]}"></i>${n}</span>`).join("")}<span>· shown on the map while this section is on screen</span></div>`;
     html += staged.map(({row,a},j) => { const d = DIVS[row.div]; const [p,q,r] = d.stages;
       // A stage Cheal doesn't describe for this group (no young stage, or no old stage) shows as "not described".
@@ -1549,7 +1563,7 @@ function iconLegend(hasA, hasB, pairL){
   const it = (html, txt) => `<div>${html}<span>${txt}</span></div>`;
   return `<div class="icolegend" aria-label="What the icons mean">` +
     (hasA ? it(ico("bad", ICON.gap, pairL, ""), `Probably hadn’t set seed before that fire (amber: may not have)`) : "") +
-    (hasB ? it(ico("warn", ICON.until, "2045", ""), `Keep fire out until this year, so it can set seed`) : "") +
+    (hasB ? it(ico("warn", ICON.until, "2045", ""), `Reaches seeding age this year`) : "") +
     it(ico("", ICON.seedage, "5–20", ""), `Years from germination to first seed`) +
     it(ico("", ICON.canopy, "", ""), `Seed held on the plant (burns with it)`) +
     it(ico("", ICON.soil, "", ""), `Seed stored in the soil`) +
@@ -1617,14 +1631,14 @@ function renderSpecies(){
     html += `<p class="answer">None of the plants commonly recorded in ${label} need special care from fire right now.</p>`;
     html += `<p>${!lastFire ? "There’s no recorded fire here since 1939, so the" : `The`} plants here that fire kills (where their seeding age is known) have ${!lastFire ? "had" : `already had time to set seed since the ${lastFire} fire`}${!lastFire ? " time to set seed" : ""}. Most of the rest regrow from roots or stems.</p>`;
   } else {
-    html += `<p class="answer"><b>${A.length + B.length} plant${A.length + B.length === 1 ? "" : "s"}</b> in ${label} ${A.length + B.length === 1 ? "is" : "are"} killed by fire and still growing back. These are the ones another fire too soon would hurt.</p>`;
+    html += `<p class="answer"><b>${A.length + B.length} plant${A.length + B.length === 1 ? "" : "s"}</b> in ${label} ${A.length + B.length === 1 ? "is" : "are"} killed by fire and still growing back.</p>`;
     html += iconLegend(A.length > 0, B.length > 0, pair ? pair.L : "");
     if(A.length) html += `<div class="featured survey"><h3 class="subhead">Survey for these first</h3>
-      <p>Part of ${t.all ? "the bush" : "this vegetation"} burnt in ${pair.P} and again in ${pair.L}, only ${pair.gap} year${pair.gap===1?"":"s"} apart. These plants may not have set seed in between. If they’re scarce or missing now, that’s the likely reason. Look for seedlings and note where you do and don’t find them.</p>
+      <p>Part of ${t.all ? "the bush" : "this vegetation"} burnt in ${pair.P} and again in ${pair.L}, only ${pair.gap} year${pair.gap===1?"":"s"} apart. These plants may not have set seed in between.</p>
       <div class="spgrid">${A.map(s => spCard(s, pair.gap < s.mr.lo ? ico("bad", ICON.gap, pair.L, `Probably hadn’t set seed before the ${pair.L} fire`) : ico("warn", ICON.gap, pair.L, `May not have set seed before the ${pair.L} fire`))).join("")}</div></div>`;
     if(B.length) html += `<div class="featured wait"><h3 class="subhead">Should be fine if fire stays out until ${B[0].until}</h3>
-      <p>Still growing back from the ${lastFire} fire. Each needs to reach seeding age before ${t.all ? "its vegetation" : "this vegetation"} burns again. Weeds and grazing can wipe out seedlings just as a fire can, so keep them down too (Part 4).</p>
-      <div class="spgrid">${B.map(s => spCard(s, ico("warn", ICON.until, s.until, `Keep fire out until ${s.until}, so it can set seed`))).join("")}</div></div>`;
+      <p>Still growing back from the ${lastFire} fire. Each needs to reach seeding age before ${t.all ? "its vegetation" : "this vegetation"} burns again.</p>
+      <div class="spgrid">${B.map(s => spCard(s, ico("warn", ICON.until, s.until, `Reaches seeding age in ${s.until}`))).join("")}</div></div>`;
   }
   html += `<p class="note">${basis} For a full list of the plants likely here, see the ${plantingGuide()}. Photos from iNaturalist, credited on each image. Fire traits from AusTraits (mainly DEECA’s Vital Attributes and Cheal 2017). Check any ID against <a href="https://vicflora.rbg.vic.gov.au" target="_blank" rel="noopener">VicFlora</a>.</p>`;
   box.innerHTML = html;
@@ -1717,14 +1731,16 @@ function prScaleNorth(P){
   return `<g font-size="${(2.8*u).toFixed(1)}" fill="#1D293B"><rect x="${3*u}" y="${y-1.6*u}" width="${len}" height="${1.4*u}" fill="#1D293B"/><text x="${3*u}" y="${y-2.6*u}">${m >= 1000 ? m/1000 + " km" : m + " m"}</text>
     <g transform="translate(${P.W-6*u},${7*u}) scale(${u/4})"><path d="M0,-16 L7,6 L0,1 L-7,6Z" fill="#1D293B"/><text y="20" text-anchor="middle" font-weight="700" font-size="11">N</text></g></g>`;
 }
-function prBlockMap(){
+function prVegMap(){
+  const v = (S.v05 && S.v05.length) ? S.v05 : (S.v1750 || []);
   const [x0,y0,x1,y1] = turf.bbox(S.aoi), px = (x1-x0)*0.08 + 0.0005, py = (y1-y0)*0.08 + 0.0005;
   const P = prProject([x0-px, y0-py, x1+px, y1+py], 640);
-  let s = `<svg viewBox="0 0 ${P.W} ${P.H}" ${P.size} class="prmap" role="img" aria-label="Map of the block shaded by growth stage">`;
+  let s = `<svg viewBox="0 0 ${P.W} ${P.H}" ${P.size} class="prmap" role="img" aria-label="Map of the block's vegetation types">`;
   s += `<rect width="${P.W}" height="${P.H}" fill="#F8FAFC"/><path d="${prPath(S.aoi.geometry, P)}" fill="#E2E8F0" fill-rule="evenodd"/>`;
-  (S.staged || []).forEach(({row, a}) => row.pieces.forEach(pc => { if(pc && pc.geometry) s += `<path d="${prPath(pc.geometry, P)}" fill="${STAGE_COLORS[a.stage]}" fill-rule="evenodd" stroke="#fff" stroke-width=".6"/>`; }));
+  v.forEach((e,i) => (e.pieces||[]).forEach(pc => { if(pc && pc.geometry) s += `<path d="${prPath(pc.geometry, P)}" fill="${PAL.s12[i % PAL.s12.length]}" fill-rule="evenodd" stroke="#fff" stroke-width=".6"/>`; }));
   s += `<path d="${prPath(S.aoi.geometry, P)}" fill="none" stroke="#1D293B" stroke-width="2" fill-rule="evenodd"/>` + prScaleNorth(P) + `</svg>`;
-  return s;
+  const key = `<div class="prkey">${v.map((e,i) => `<span><i style="background:${PAL.s12[i % PAL.s12.length]}"></i>${esc(e.name)}</span>`).join("")}<span><i style="background:#E2E8F0"></i>No native vegetation mapped</span></div>`;
+  return {svg:s, key, pre: !(S.v05 && S.v05.length)};
 }
 function prLandMap(){
   const LD = S.land; if(!LD || !LD.ok) return "";
@@ -1736,7 +1752,6 @@ function prLandMap(){
   if(LD.near && LD.near.dist >= 60) s += `<circle cx="${P.x(LD.near.lng)}" cy="${P.y(LD.near.lat)}" r="${2*P.u}" fill="${STAGE_COLORS[2]}" stroke="#1D293B" stroke-width="${.5*P.u}"/>`;
   return s + prScaleNorth(P) + `</svg>`;
 }
-const prStageKey = () => `<div class="prkey">${STAGE_NAMES.map((n,i) => `<span><i style="background:${STAGE_COLORS[i]}"></i>${n}</span>`).join("")}<span><i style="background:#E2E8F0"></i>Not staged (cleared, or no fire group)</span></div>`;
 
 // 1.4 verdicts in words, one line per fire gap plus where things stand now.
 function prVerdicts(row, a){
@@ -1779,7 +1794,7 @@ function buildReport(){
     <h1>${esc(S.example ? EXAMPLE.label : (S.label || "Selected block"))}</h1>
     <div class="prfacts"><span><b>${fmtHa(S.ha)} ha</b>${S.parcels.length > 1 ? ` across ${S.parcels.length} titles` : ""}</span><span>Looked up ${when}</span>${cma ? `<span>${esc(titleCase(cma.cmaname))} CMA</span>` : ""}${lc ? `<span>Landcare: ${esc(lc.group_name)}</span>` : ""}</div>
     <p class="prnote">Open the tool to explore this block yourself: ${esc(TOOL_URL)}${S.viaCircle ? ". This report covers a 150 m circle around the point clicked, not a property title." : ""}</p></header>`);
-  h.push(`<div class="prmaps"><figure>${prBlockMap()}<figcaption>Your block, shaded by growth stage (section 2.1)</figcaption></figure></div>${prStageKey()}`);
+  { const vm = prVegMap(); h.push(`<div class="prmaps"><figure>${vm.svg}<figcaption>Your block’s vegetation types (${vm.pre ? "pre-1750" : "2005"} EVC mapping, section 1.2)</figcaption></figure></div>${vm.key}`); }
   // 1.1
   const bio = S.bios && S.bios.length ? S.bios.map(b => esc(b.name) + (S.bios.length > 1 && b.share != null ? ` (${fmtPct(b.share)})` : "")).join(", ") : "not loaded";
   h.push(sec("1.1", "Bioregion and geology", `<p><b>Bioregion:</b> ${bio}</p>${S.geol && S.geol.length ? `<p><b>Geology:</b> ${S.geol.slice(0,4).map(g => `${esc(g.unit)} (${esc(String(g.lith||"").replace(/\.$/,""))}, ${fmtPct(g.ha/S.ha)})`).join("; ")}</p>` : ""}`));
@@ -1820,9 +1835,9 @@ function buildReport(){
   if(S.staged && S.staged.length) b21 += `<table><thead><tr><th>Fire group</th><th>Last fire</th><th>Growth stage</th><th class="n">Area</th></tr></thead><tbody>` +
     S.staged.map(({row, a}) => `<tr><td>${esc(DIVS[row.div].name)}</td><td>${a.noRecord ? `none since ${RECORD_START}` : `${a.last} (${a.since} yrs)`}</td><td><i class="prsw" style="background:${STAGE_COLORS[a.stage]}"></i>${STAGE_NAMES[a.stage]}</td><td class="n">${fmtHa(row.ha)} ha</td></tr>`).join("") + `</tbody></table>`;
   if(S.land && S.land.ok){ const lv = landVerdict(S.land);
-    b21 += `<h3>Your block in the landscape</h3><p>${lv.lead}</p><p>${lv.tip}</p>
+    b21 += `<h3>Your block in the landscape</h3><p>${lv.lead}</p>
       <div class="prmaps"><figure>${prLandMap()}<figcaption>Growth stage of the native bush within ${LAND_KM} km (dashed ring). Your block is outlined in orange${S.land.near && S.land.near.dist >= 60 ? "; the dot is the nearest patch of mature or older bush" : ""}.</figcaption></figure></div>
-      <p class="prnote">Within ${LAND_KM} km: ${STAGE_NAMES.map((n,i) => `${fmtPct(S.land.share[i])} ${n.toLowerCase()}`).join(", ")}. A patch is at least ${LAND_PATCH_HA} ha of mature or older bush.</p>`; }
+      <p class="prnote">${(() => { const bs = blockStageShare(S.land); return bs ? `Your block: ${STAGE_NAMES.map((n,i) => `${fmtPct(bs.share[i])} ${n.toLowerCase()}`).join(", ")}. ` : ""; })()}Within ${LAND_KM} km: ${STAGE_NAMES.map((n,i) => `${fmtPct(S.land.share[i])} ${n.toLowerCase()}`).join(", ")}. A patch is at least ${LAND_PATCH_HA} ha of mature or older bush.</p>`; }
   h.push(sec("2.1", "Growth stages", b21 || `<p>Growth stage needs a fire group.</p>`));
   // 2.2 fire-sensitive plants
   const tabs = Object.keys(SPD.lists).length && S.v05 ? plantTabs().filter(t => t.all || t.list) : [];
@@ -1831,9 +1846,9 @@ function buildReport(){
     const row = (s, key) => { pids.push(s.inat);
       const facts = [s.mat ? `seeds at ${esc(s.mat)} yrs` : "", s.seed === "C" ? "seed held on the plant" : s.seed === "S" ? "seed in the soil" : "", s.cons ? esc(CONS_NAMES[s.cons] || s.cons) : ""].filter(Boolean).join(" · ");
       return `<div class="prplant">${s.inat ? `<img data-pr-inat="${s.inat}" data-sci="${esc(s.sci)}" alt="">` : `<span class="prnoph"></span>`}<div><i>${esc(s.sci)}</i>${s.com ? ` · ${esc(s.com)}` : ""}<br><b>${key}</b><br><span class="prnote">${facts}</span></div></div>`; };
-    if(ps.A.length) b22 += `<h3>Survey for these first</h3><p>Part of the bush burnt in ${ps.pair.P} and again in ${ps.pair.L}, only ${ps.pair.gap} year${ps.pair.gap === 1 ? "" : "s"} apart. These plants are killed by fire and may not have set seed in between. If they’re scarce or missing now, that’s the likely reason.</p>
+    if(ps.A.length) b22 += `<h3>Survey for these first</h3><p>Part of the bush burnt in ${ps.pair.P} and again in ${ps.pair.L}, only ${ps.pair.gap} year${ps.pair.gap === 1 ? "" : "s"} apart. These plants are killed by fire and may not have set seed in between.</p>
       <div class="prplants">${ps.A.map(s => row(s, `${ps.pair.gap < s.mr.lo ? "Probably hadn’t" : "May not have"} seeded before ${ps.pair.L}`)).join("")}</div>`;
-    if(ps.B.length) b22 += `<h3>Should be fine if fire stays out until ${ps.B[0].until}</h3><p>Killed by fire and still growing back from the ${ps.lastFire} fire. Each needs to reach seeding age before the bush burns again. Weeds and grazing can wipe out seedlings too.</p>
+    if(ps.B.length) b22 += `<h3>Should be fine if fire stays out until ${ps.B[0].until}</h3><p>Killed by fire and still growing back from the ${ps.lastFire} fire. Each needs to reach seeding age before the bush burns again.</p>
       <div class="prplants">${ps.B.map(s => row(s, `No fire before ${s.until}`)).join("")}</div>`;
     if(!ps.A.length && !ps.B.length) b22 += `<p>None of the plants commonly recorded in your vegetation need special care from fire right now.</p>`;
     b22 += `<p class="prnote">${ps.basis} Fire traits from AusTraits (mainly DEECA’s Vital Attributes and Cheal 2017). Photos from iNaturalist under Creative Commons licences, credited below.</p><p class="prnote" id="prcredits"></p>`;
@@ -1845,7 +1860,7 @@ function buildReport(){
     <div class="prlines"><b>What I’ve seen on the ground since the fire</b></div><div class="prlines"><b>Questions</b></div></section>`);
   h.push(`<section class="prsec prsmall"><h2>About this report</h2>
     <p>Everything here comes from state government (DEECA) mapping fetched on ${when}: bioregions, geology, 2005 and pre-1750 vegetation (EVCs), fire history since ${RECORD_START}, and Victorian Biodiversity Atlas survey plots. It is drawn at a landscape scale and can be wrong for a single property. If what you see on the ground disagrees, trust your eyes.</p>
-    <p>Tolerable fire intervals and growth stages are from Cheal (2010), <i>Growth stages and tolerable fire intervals for Victoria’s native vegetation data sets</i>, the source of DEECA’s tables. Each vegetation type is matched to a fire group by its EVC number; those matches are proposed from Cheal (2010) and not yet checked by an ecologist. Fire boundaries don’t show unburnt patches inside them, and severity is often unmapped.</p></section>`);
+    <p>Tolerable fire intervals and growth stages are from Cheal (2010), <i>Growth stages and tolerable fire intervals for Victoria’s native vegetation data sets</i>, the source of DEECA’s tables. Each vegetation type is matched to a fire group by its EVC number, following Cheal (2010). Fire boundaries don’t show unburnt patches inside them, and severity is often unmapped.</p></section>`);
   return {html: h.join(""), pids: [...new Set(pids.filter(Boolean).map(String))]};
 }
 async function printReport(){
