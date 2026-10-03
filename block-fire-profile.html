@@ -268,7 +268,7 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
     <div class="prophead" id="prophead"></div>
     <nav class="parttabs" role="tablist" aria-label="Guide part">
       <button type="button" role="tab" data-part="1" aria-selected="true"><span>Part 1</span> Where you are</button>
-      <button type="button" role="tab" data-part="2" aria-selected="false"><span>Part 2</span> What comes back by itself</button>
+      <button type="button" role="tab" data-part="2" aria-selected="false"><span>Part 2</span> What happens next</button>
     </nav>
 
     <section class="sec" id="s11" data-part="1">
@@ -291,8 +291,8 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
       <div class="body"></div>
     </section>
 
-    <section class="sec" id="s15" data-part="1">
-      <div class="sechead"><span class="sn">1.5</span><h2>Growth stages</h2></div>
+    <section class="sec" id="s15" data-part="2">
+      <div class="sechead"><span class="sn">2.1</span><h2>Growth stages</h2></div>
       <div class="body"></div>
     </section>
 
@@ -304,7 +304,7 @@ body[data-part="1"] .sec[data-part="2"], body[data-part="2"] .sec[data-part="1"]
 
     <section class="sec" id="swd" data-part="1">
       <div class="sechead"><span class="sn">&#10003;</span><h2>Write it down</h2></div>
-      <p class="q">Everything Part 1 asks you to record, in one place. Take it to your Landcare group, or use it with Parts 2 to 5.</p>
+      <p class="q">Everything the lookup tool found for your block, in one place. Take it to your Landcare group, or use it with Parts 2 to 5.</p>
       <div class="body"></div>
     </section>
 
@@ -534,7 +534,7 @@ const selLayer = L.geoJSON(null, {style:{color:"#fff", weight:3, fill:false}}).a
 const selInner = L.geoJSON(null, {style:{color:"#C24E1C", weight:1.5, dashArray:"4 3", fillColor:"#C24E1C", fillOpacity:.08}}).addTo(map);
 // Whole extent of a fire, drawn for context behind the part that burnt the block (1.3).
 const ctxLayer = L.geoJSON(null, {style:{color:"#C24E1C", weight:1.5, fillColor:"#C24E1C", fillOpacity:.16}, interactive:false}).addTo(map);
-// Growth stage of each part of the block (1.5), shown while that section is on screen.
+// Growth stage of each part of the block (Part 2, section 2.1), shown while that section is on screen.
 const STAGE_COLORS = ["#CFE3A8", "#8CC084", "#3E8E6E", "#1F4E5A"];
 const stageLayer = L.geoJSON(null, {style:f => ({color:"#fff", weight:1, fillColor:STAGE_COLORS[f.properties.stage], fillOpacity:.6}), interactive:false});
 const hiLayer = L.geoJSON(null, {style:{color:"#FFD24A", weight:2, fillColor:"#FFD24A", fillOpacity:.35}}).addTo(map);
@@ -964,7 +964,7 @@ function render12(){
 
 /* ---------- map overview + click to pick ----------
    While 1.2, 1.3 or 1.4 is on screen, every item in its list is drawn across the block in its own
-   low-opacity cool colour (1.5 uses its growth-stage colours instead). Clicking a row turns it yellow;
+   low-opacity cool colour (2.1 uses its growth-stage colours instead). Clicking a row turns it yellow;
    clicking it again clears it. Nothing changes on hover. */
 // Each section has its own colour family so the map never looks the same from one section to the next:
 // 1.1 bioregions blues/purples, 1.2 and 1.4 vegetation aquas through greens to yellow-greens,
@@ -1325,7 +1325,7 @@ function render15(){
     return out; })();
   const other = S.assessed.filter(x=>!DIVS[x.row.div].stages);
   let html = "";
-  if(!S.assessed.length){ $("#s15 .body").innerHTML = `<p class="note">Growth stage needs a fire group. Choose one in 1.2.</p>`; return; }
+  if(!S.assessed.length){ $("#s15 .body").innerHTML = `<p class="note">Growth stage needs a fire group. Choose one in 1.2, on the Part 1 tab.</p>`; return; }
   if(staged.length){
     const counts = [0,0,0,0]; staged.forEach(x=>counts[x.a.stage]+=x.row.ha);
     const main = counts.indexOf(Math.max(...counts));
@@ -1344,7 +1344,7 @@ function render15(){
   hover("#s15 .tlrow[data-stg]", el => staged[+el.dataset.stg].row.pieces);
   syncStageLayer();
 }
-// Show the growth stage layer only while section 1.5 is on screen.
+// Show the growth stage layer only while section 2.1 is on screen.
 function syncStageLayer(){ const on = activeSec() === "s15" && stageLayer.getLayers().length; if(on && !map.hasLayer(stageLayer)) { stageLayer.addTo(map); selLayer.bringToFront(); } else if(!on && map.hasLayer(stageLayer)) map.removeLayer(stageLayer); }
 
 
@@ -1612,7 +1612,7 @@ function writeDownText(){
   });
   if(S.assessed && !S.assessed.length) L.push(`    no vegetation matched to a fire group`);
   L.push("");
-  L.push(`1.5 GROWTH STAGE:`);
+  L.push(`2.1 GROWTH STAGE:`);
   (S.assessed||[]).filter(x=>DIVS[x.row.div].stages).forEach(({row,a})=>L.push(`    ${DIVS[row.div].name}, ${fmtHa(row.ha)} ha: ${STAGE_NAMES[a.stage]} (${a.noRecord?`${a.since}+`:a.since} yrs since fire)`));
   L.push("");
   if(Object.keys(SPD.lists).length && S.v05){
